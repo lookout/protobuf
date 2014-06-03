@@ -6,6 +6,7 @@ require 'protobuf/version'
 require 'protobuf/logging'
 require 'protobuf/rpc/servers/socket_runner'
 require 'protobuf/rpc/servers/zmq_runner'
+require 'protobuf/rpc/servers/http_runner'
 
 module Protobuf
   class CLI < ::Thor
@@ -34,6 +35,7 @@ module Protobuf
 
     option :socket,                     :type => :boolean, :aliases => %w(-s), :desc => 'Socket Mode for server and client connections.'
     option :zmq,                        :type => :boolean, :aliases => %w(-z), :desc => 'ZeroMQ Socket Mode for server and client connections.'
+    option :http,                       :type => :boolean, :aliases => %w(), :desc => 'HTTP Server Mode for server and client connections.'
 
     option :beacon_interval,            :type => :numeric, :desc => 'Broadcast beacons every N seconds. (default: 5)'
     option :beacon_port,                :type => :numeric, :desc => 'Broadcast beacons to this port (default: value of ServiceDirectory.port)'
@@ -128,6 +130,8 @@ module Protobuf
                         :socket
                       when /\Azmq[[:space:]]*\z/i
                         :zmq
+                      when /http/i
+                        :http
                       else
                         require "#{server_type}"
                         server_type
@@ -161,6 +165,8 @@ module Protobuf
                         create_zmq_runner
                       when :socket
                         create_socket_runner
+                      when :http
+                        create_http_runner
                       else
                         say("Extension runner mode: #{mode}")
                         create_extension_server_runner
@@ -226,6 +232,12 @@ module Protobuf
         require 'protobuf/zmq'
 
         self.runner = ::Protobuf::Rpc::ZmqRunner.new(runner_options)
+      end
+
+      def create_http_runner
+        require 'protobuf/http'
+
+        @runner = ::Protobuf::Rpc::HttpRunner.new(runner_options)
       end
 
       def shutdown_server

@@ -2,7 +2,6 @@ require 'timeout'
 require 'rubygems'
 require 'bundler'
 Bundler.setup :default, :development, :test
-require 'pry'
 require 'pathname'
 
 $LOAD_PATH << ::File.expand_path('../..', __FILE__)
