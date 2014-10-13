@@ -65,6 +65,20 @@ RSpec.describe ::Protobuf::Rpc::Stat do
     end
   end
 
+  describe "statsd_base_path" do
+    let(:stats) { described_class.new(:CLIENT) }
+    subject(:statsd_base_path) { stats.statsd_base_path }
+
+    before :each do
+      stats.service = 'Foo::BarService'
+      stats.method_name = 'find_bars'
+    end
+
+    it "should use correct base path" do
+      expect(statsd_base_path).to eq "rpc.foo.barservice.find_bars"
+    end
+  end
+
   describe "#stop" do
     let(:stats) { described_class.new(:CLIENT) }
     let(:start_time) { Time.now - 3000 }
@@ -78,6 +92,7 @@ RSpec.describe ::Protobuf::Rpc::Stat do
       stats.method_name = method_name
       stats.start_time = start_time
       stats.end_time = end_time
+      stats.stub(:statsd_base_path).and_return(stats_path)
     end
 
     subject(:stop) { stats.stop }
@@ -93,6 +108,10 @@ RSpec.describe ::Protobuf::Rpc::Stat do
 
       before :each do
         Protobuf::Rpc::Stat.statsd_client = statsd_client
+      end
+
+      after :each do
+        Protobuf::Rpc::Stat.statsd_client = nil
       end
 
       context "on success" do
