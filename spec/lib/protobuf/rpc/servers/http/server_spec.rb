@@ -72,9 +72,9 @@ describe Protobuf::Rpc::Http::Server do
 
     it 'should return RPC_ERROR for invalid input' do
       response = client.post "/ReverseModule%3A%3AReverseService/reverse", :input => "\\n\\x03foo"
-      response.status.should eq 500
+      response.status.should eq 400
       response.headers['content-type'].should eq "application/x-protobuf"
-      response.headers['x-protobuf-error-reason'].should eq Protobuf::Socketrpc::ErrorReason::RPC_ERROR.to_s
+      response.headers['x-protobuf-error-reason'].should eq Protobuf::Socketrpc::ErrorReason::BAD_REQUEST_DATA.to_s
       response.body.should eq ""
     end
 

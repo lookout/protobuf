@@ -67,7 +67,7 @@ module Protobuf
               :error => rpc_response[:error],
               :reason => rpc_response[:error_reason]
           end
-          
+
           return protobuf_http_response 200, :body => rpc_response['response_proto']
         end
 
