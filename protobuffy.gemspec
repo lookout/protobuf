@@ -37,4 +37,6 @@ require "protobuf/version"
   s.add_development_dependency 'simplecov'
   s.add_development_dependency 'timecop'
   s.add_development_dependency 'yard'
+
+  s.add_development_dependency 'ruby-prof' if RUBY_ENGINE.to_sym == :ruby
 end

@@ -2,8 +2,7 @@ require 'benchmark'
 require 'protobuf'
 require 'protobuf/socket'
 require 'support/all'
-require 'spec_helper'
-require SUPPORT_PATH.join('resource_service')
+require 'support/test/resource_service'
 
 case RUBY_ENGINE.to_sym
 when :ruby
@@ -74,7 +73,10 @@ namespace :benchmark do
   desc "benchmark ZMQ client with ZMQ server and profile"
   task :zmq_profile, [:number, :length, :profile_output] do |_task, args|
     args.with_defaults(:number => 1000, :length => 100, :profile_output => "/tmp/zmq_profiler_#{Time.now.to_i}")
+<<<<<<< HEAD
 
+=======
+>>>>>>> PerfTools is dead, long live RubyProf
     profile_code(args[:profile_output]) do
       zmq_client_zmq_server(args[:number], args[:length])
     end
@@ -87,7 +89,11 @@ namespace :benchmark do
     args.with_defaults(:number => 1000, :profile_output => "/tmp/profiler_new_#{Time.now.to_i}")
     create_params = { :name => "The name that we set", :date_created => Time.now.to_i, :status => 2 }
     profile_code(args[:profile_output]) do
+<<<<<<< HEAD
       Integer(args[:number]).times { Test::Resource.new(create_params) }
+=======
+      args[:number].to_i.times { Test::Resource.new(create_params) }
+>>>>>>> PerfTools is dead, long live RubyProf
     end
 
     puts args[:profile_output]
@@ -98,7 +104,11 @@ namespace :benchmark do
     args.with_defaults(:number => 1000, :profile_output => "/tmp/profiler_new_#{Time.now.to_i}")
     create_params = { :name => "The name that we set", :date_created => Time.now.to_i, :status => 2 }
     profile_code(args[:profile_output]) do
+<<<<<<< HEAD
       Integer(args[:number]).times { Test::Resource.decode(Test::Resource.new(create_params).serialize) }
+=======
+      args[:number].to_i.times { Test::Resource.new(create_params).serialize }
+>>>>>>> PerfTools is dead, long live RubyProf
     end
 
     puts args[:profile_output]
@@ -108,9 +118,13 @@ namespace :benchmark do
     case RUBY_ENGINE.to_sym
     when :ruby
       profile_data = RubyProf.profile(&block)
+<<<<<<< HEAD
       ::File.open(output, "w") do |output_file|
         RubyProf::FlatPrinter.new(profile_data).print(output_file)
       end
+=======
+      RubyProf::FlatPrinter.new(profile_data).print(:path => output)
+>>>>>>> PerfTools is dead, long live RubyProf
     when :rbx
       profiler = Rubinius::Profiler::Instrumenter.new
       profiler.profile(false, &block)
