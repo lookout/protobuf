@@ -1,3 +1,3 @@
 module Protobuf
-  VERSION = '4.0.0'
+  VERSION = '3.5.0'
 end
