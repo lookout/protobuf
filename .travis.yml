@@ -2,7 +2,9 @@ language: ruby
 rvm:
   - "1.9.3"
   - "2.3.1"
-script: gem install bundler -v 1.12.5 && NO_COMPILE_TEST_PROTOS=1 bundle _1.12.5_ exec rake spec/lib
+before_install:
+  - gem install bundler
+script: NO_COMPILE_TEST_PROTOS=1 bundle _1.12.5_ exec rake spec/lib
 notifications:
   webhooks:
     urls:
