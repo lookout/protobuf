@@ -73,7 +73,6 @@ namespace :benchmark do
   desc "benchmark ZMQ client with ZMQ server and profile"
   task :zmq_profile, [:number, :length, :profile_output] do |_task, args|
     args.with_defaults(:number => 1000, :length => 100, :profile_output => "/tmp/zmq_profiler_#{Time.now.to_i}")
-
     profile_code(args[:profile_output]) do
       zmq_client_zmq_server(args[:number], args[:length])
     end
@@ -107,9 +106,7 @@ namespace :benchmark do
     case RUBY_ENGINE.to_sym
     when :ruby
       profile_data = RubyProf.profile(&block)
-      ::File.open(output, "w") do |output_file|
-        RubyProf::FlatPrinter.new(profile_data).print(output_file)
-      end
+      RubyProf::FlatPrinter.new(profile_data).print(:path => output)
     when :rbx
       profiler = Rubinius::Profiler::Instrumenter.new
       profiler.profile(false, &block)

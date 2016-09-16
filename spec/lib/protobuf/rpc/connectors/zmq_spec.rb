@@ -3,6 +3,10 @@ require 'protobuf/zmq'
 
 RSpec.describe ::Protobuf::Rpc::Connectors::Zmq do
   subject { described_class.new(options) }
+  
+  it_behaves_like "a Protobuf Connector"
+
+  specify{ expect(described_class.include?(Protobuf::Rpc::Connectors::Common)).to be true }
 
   let(:options) do
     {

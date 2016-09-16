@@ -131,31 +131,39 @@ RSpec.describe Protobuf::Rpc::Connectors::Common do
   shared_examples "a ConnectorDisposition" do |meth, cb, *args|
 
     it "calls #complete before exit" do
-      subject.stats = double("Object", :stop => true)
+      stats = double("Object")
+      allow(stats).to receive_messages(:success => true)
+      allow(stats).to receive_messages(:failure => true)
+      allow(stats).to receive_messages(:stop => true)
+      subject.stats = stats
 
-      expect(subject).to receive(:complete)
+      allow(subject).to receive(:complete).and_return(nil)
       subject.method(meth).call(*args)
     end
 
     it "calls the #{cb} callback when provided" do
       stats = double("Object")
-      allow(stats).to receive(:stop).and_return(true)
+      allow(stats).to receive_messages(:success => true)
+      allow(stats).to receive_messages(:failure => true)
+      allow(stats).to receive_messages(:stop => true)
       subject.stats = stats
-      some_cb = double("Object")
+      _cb = double("Object")
 
-      subject.instance_variable_set("@#{cb}", some_cb)
-      expect(some_cb).to receive(:call).and_return(true)
+      subject.instance_variable_set("@#{cb}", _cb)
+      allow(_cb).to receive(:call).and_return(true)
       subject.method(meth).call(*args)
     end
 
     it "calls the complete callback when provided" do
       stats = double("Object")
-      allow(stats).to receive(:stop).and_return(true)
+      allow(stats).to receive_messages(:success => true)
+      allow(stats).to receive_messages(:failure => true)
+      allow(stats).to receive_messages(:stop => true)
       subject.stats = stats
       comp_cb = double("Object")
 
       subject.instance_variable_set(:@complete_cb, comp_cb)
-      expect(comp_cb).to receive(:call).and_return(true)
+      allow(comp_cb).to receive(:call).and_return(true)
       subject.method(meth).call(*args)
     end
 

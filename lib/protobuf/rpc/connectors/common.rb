@@ -42,6 +42,7 @@ module Protobuf
           @error.message = message
           logger.debug { sign_message("Server failed request (invoking on_failure): #{@error.inspect}") }
 
+          @stats.failure(code)
           @failure_cb.call(@error) unless @failure_cb.nil?
         rescue => e
           logger.error { sign_message("Failure callback error encountered") }
@@ -119,11 +120,12 @@ module Protobuf
         def setup_connection
           initialize_stats
           @request_data = request_bytes
-          @stats.request_size = request_bytes.size
+          @stats.request_size = @request_data.size
         end
 
         def succeed(response)
           logger.debug { sign_message("Server succeeded request (invoking on_success)") }
+          @stats.success
           @success_cb.call(response) unless @success_cb.nil?
         rescue => e
           logger.error { sign_message("Success callback error encountered") }

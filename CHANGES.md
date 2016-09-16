@@ -26,6 +26,17 @@
 - Fixes bug with MRI and "dead" thread in zmq broker
 - Fixes Rubocop compatability with new version
 
+3.2.0
+--------
+
+- Change Protobuf::Rpc::Stats.statsd_client to Protobuf::Statsd.client
+    and track both RPC calls and service handling. [@dgolombek]
+
+3.1.0
+--------
+
+- Add Protobuf::Rpc::Stats.statsd_client API to pass statistics on to Statsd. [@dgolombek]
+
 3.0.4
 --------
 

@@ -1,6 +1,7 @@
 require 'date'
 require 'time'
 require 'protobuf/logging'
+require 'protobuf/statsd'
 
 module Protobuf
   module Rpc
@@ -14,6 +15,8 @@ module Protobuf
         @mode = mode
         @request_size = 0
         @response_size = 0
+        @success = false
+        @failure_code = nil
         start
       end
 
@@ -58,6 +61,15 @@ module Protobuf
       def stop
         start unless @start_time
         @end_time ||= ::Time.now
+        call_statsd_client
+      end
+
+      def success
+        @success = true
+      end
+
+      def failure(code)
+        @failure_code = code
       end
 
       def stopped?
@@ -92,6 +104,31 @@ module Protobuf
         ::Thread.current.object_id.to_s(16)
       end
 
+      # Return base path for StatsD metrics
+      def statsd_base_path
+        "rpc-client.#{service}.#{method_name}".gsub('::', '.').downcase
+      end
+
+      # If a StatsD Client has been configured, send stats to it upon
+      # completion.
+      def call_statsd_client
+        path = statsd_base_path
+        statsd_client = Protobuf::Statsd.client
+        return unless statsd_client
+
+        if @success
+          statsd_client.increment("#{path}.success")
+        elsif @failure_code
+          statsd_client.increment("#{path}.failure.total")
+          statsd_client.increment("#{path}.failure.#{@failure_code}")
+        end
+
+        if start_time && end_time
+          duration = end_time - start_time
+          statsd_client.timing("#{path}.time", duration)
+        end
+      end
+      private :call_statsd_client
     end
   end
 end
