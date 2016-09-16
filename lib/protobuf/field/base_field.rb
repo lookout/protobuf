@@ -1,9 +1,12 @@
-require 'protobuf/wire_type'
+require 'protobuf/deprecation'
 require 'protobuf/field/field_array'
+require 'protobuf/logging'
+require 'protobuf/wire_type'
 
 module Protobuf
   module Field
     class BaseField
+      include ::Protobuf::Logging
 
       ##
       # Constants
@@ -12,17 +15,13 @@ module Protobuf
       PACKED_TYPES = [
         ::Protobuf::WireType::VARINT,
         ::Protobuf::WireType::FIXED32,
-        ::Protobuf::WireType::FIXED64
+        ::Protobuf::WireType::FIXED64,
       ].freeze
 
       ##
       # Attributes
       #
-
-      attr_reader :default, :default_value, :deprecated, :extension,
-                  :getter_method_name, :message_class, :name, :optional,
-                  :packed, :repeated, :required, :rule, :setter_method_name,
-                  :tag, :type_class
+      attr_reader :message_class, :name, :options, :rule, :tag, :type_class
 
       ##
       # Class Methods
@@ -37,122 +36,131 @@ module Protobuf
       #
 
       def initialize(message_class, rule, type_class, name, tag, options)
-        @message_class, @rule, @type_class, @name, @tag = \
-          message_class, rule, type_class, name, tag
+        @message_class = message_class
+        @name          = name
+        @rule          = rule
+        @tag           = tag
+        @type_class    = type_class
+        @options       = options
 
-        set_rule_predicates
-
-        @getter_method_name = name
-        @setter_method_name = "#{name}="
-        @default   = options.delete(:default)
-        @extension = options.delete(:extension)
-        @packed    = repeated? && options.delete(:packed)
-        @deprecated = options.delete(:deprecated)
-
-        set_default_value
-        warn_excess_options(options) unless options.empty?
         validate_packed_field if packed?
         define_accessor
+        tag_encoded
       end
 
       ##
       # Public Instance Methods
       #
 
-      def acceptable?(value)
+      def acceptable?(_value)
         true
+      end
+
+      def coerce!(value)
+        value
+      end
+
+      def decode(_bytes)
+        fail NotImplementedError, "#{self.class.name}##{__method__}"
+      end
+
+      def default
+        options[:default]
+      end
+
+      def default_value
+        @default_value ||= case
+                           when optional? then typed_default_value
+                           when repeated? then ::Protobuf::Field::FieldArray.new(self).freeze
+                           when required? then nil
+                           end
+      end
+
+      def deprecated?
+        options.key?(:deprecated)
+      end
+
+      def encode(_value)
+        fail NotImplementedError, "#{self.class.name}##{__method__}"
+      end
+
+      def extension?
+        options.key?(:extension)
       end
 
       def enum?
         false
       end
 
+      def getter
+        name
+      end
+
       def message?
         false
       end
 
-      # Decode +bytes+ and pass to +message_instance+.
-      def set(message_instance, bytes)
-        if packed?
-          array = message_instance.__send__(getter_method_name)
-          method = \
-            case wire_type
-            when ::Protobuf::WireType::FIXED32 then :read_fixed32
-            when ::Protobuf::WireType::FIXED64 then :read_fixed64
-            when ::Protobuf::WireType::VARINT  then :read_varint
-            end
-          stream = StringIO.new(bytes)
-
-          until stream.eof?
-            array << decode(::Protobuf::Decoder.__send__(method, stream))
-          end
-        else
-          value = decode(bytes)
-          if repeated?
-            message_instance.__send__(getter_method_name) << value
-          else
-            message_instance.__send__(setter_method_name, value)
-          end
-        end
+      def optional?
+        rule == :optional
       end
 
-      # Decode +bytes+ and return a field value.
-      def decode(bytes)
-        raise NotImplementedError, "#{self.class.name}\#decode"
+      def packed?
+        repeated? && options.key?(:packed)
       end
 
-      # Encode +value+ and return a byte string.
-      def encode(value)
-        raise NotImplementedError, "#{self.class.name}\#encode"
-      end
-
-      def extension?
-        !! extension
-      end
-
-      # Is this a repeated field?
       def repeated?
-        !! repeated
+        rule == :repeated
       end
 
-      # Is this a repeated message field?
       def repeated_message?
         repeated? && message?
       end
 
-      # Is this a required field?
       def required?
-        !! required
+        rule == :required
       end
 
-      # Is this a optional field?
-      def optional?
-        !! optional
+      # FIXME: need to cleanup (rename) this warthog of a method.
+      def set(message_instance, bytes)
+        return message_instance.__send__(setter, decode(bytes)) unless repeated?
+        return message_instance.__send__(getter) << decode(bytes) unless packed?
+
+        array = message_instance.__send__(getter)
+        stream = StringIO.new(bytes)
+
+        if wire_type == ::Protobuf::WireType::VARINT
+          array << Varint.decode(stream) until stream.eof?
+        elsif wire_type == ::Protobuf::WireType::FIXED64
+          array << stream.read(8) until stream.eof?
+        elsif wire_type == ::Protobuf::WireType::FIXED32
+          array << stream.read(4) until stream.eof?
+        end
       end
 
-      # Is this a deprecated field?
-      def deprecated?
-        !! deprecated
+      def setter
+        @setter ||= "#{name}="
       end
 
-      # Is this a packed repeated field?
-      def packed?
-        !! packed
+      def tag_encoded
+        @tag_encoded ||= begin
+                           case
+                           when repeated? && packed?
+                             ::Protobuf::Field::VarintField.encode((tag << 3) | ::Protobuf::WireType::LENGTH_DELIMITED)
+                           else
+                             ::Protobuf::Field::VarintField.encode((tag << 3) | wire_type)
+                           end
+                         end
       end
 
+      # FIXME: add packed, deprecated, extension options to to_s output
       def to_s
         "#{rule} #{type_class} #{name} = #{tag} #{default ? "[default=#{default.inspect}]" : ''}"
       end
 
-      def type
-        $stderr.puts("[DEPRECATED] #{self.class.name}#type usage is deprecated.\nPlease use #type_class instead.")
-        type_class
-      end
+      ::Protobuf.deprecator.define_deprecated_methods(self, :type => :type_class)
 
-      def warn_if_deprecated
-        if ::Protobuf.print_deprecation_warnings? && deprecated?
-          $stderr.puts("[WARNING] #{message_class.name}##{name} field usage is deprecated.")
-        end
+      def wire_type
+        ::Protobuf::WireType::VARINT
       end
 
       private
@@ -173,25 +181,28 @@ module Protobuf
 
       def define_array_getter
         field = self
+        method_name = field.getter
+
         message_class.class_eval do
-          define_method(field.getter_method_name) do
-            field.warn_if_deprecated
+          define_method(method_name) do
             @values[field.name] ||= ::Protobuf::Field::FieldArray.new(field)
           end
         end
+
+        ::Protobuf.field_deprecator.deprecate_method(message_class, method_name) if field.deprecated?
       end
 
       def define_array_setter
         field = self
-        message_class.class_eval do
-          define_method(field.setter_method_name) do |val|
-            field.warn_if_deprecated
+        method_name = field.setter
 
+        message_class.class_eval do
+          define_method(method_name) do |val|
             if val.is_a?(Array)
               val = val.dup
               val.compact!
             else
-              raise TypeError, <<-TYPE_ERROR
+              fail TypeError, <<-TYPE_ERROR
                 Expected repeated value of type '#{field.type_class}'
                 Got '#{val.class}' for repeated protobuf field #{field.name}
               TYPE_ERROR
@@ -205,55 +216,40 @@ module Protobuf
             end
           end
         end
+
+        ::Protobuf.field_deprecator.deprecate_method(message_class, method_name) if field.deprecated?
       end
 
       def define_getter
         field = self
+        method_name = field.getter
+
         message_class.class_eval do
-          define_method(field.getter_method_name) do
-            field.warn_if_deprecated
-            @values.fetch(field.name, field.default_value)
+          define_method(method_name) do
+            @values[field.name] || field.default_value
           end
         end
+
+        ::Protobuf.field_deprecator.deprecate_method(message_class, method_name) if field.deprecated?
       end
 
       def define_setter
         field = self
-        message_class.class_eval do
-          define_method(field.setter_method_name) do |val|
-            field.warn_if_deprecated
+        method_name = field.setter
 
+        message_class.class_eval do
+          define_method(method_name) do |val|
             if val.nil? || (val.respond_to?(:empty?) && val.empty?)
               @values.delete(field.name)
             elsif field.acceptable?(val)
-              @values[field.name] = val
+              @values[field.name] = field.coerce!(val)
             else
-              raise TypeError, "Unacceptable value #{val} for field #{field.name} of type #{field.type_class}"
+              fail TypeError, "Unacceptable value #{val} for field #{field.name} of type #{field.type_class}"
             end
           end
         end
-      end
 
-      def set_default_value
-        @default_value = case
-                         when repeated? then ::Protobuf::Field::FieldArray.new(self).freeze
-                         when required? then nil
-                         when optional? then typed_default_value
-                         end
-      end
-
-      def set_rule_predicates
-        case rule
-        when :repeated then
-          @required = @optional = false
-          @repeated = true
-        when :required then
-          @repeated = @optional = false
-          @required = true
-        when :optional then
-          @repeated = @required = false
-          @optional = true
-        end
+        ::Protobuf.field_deprecator.deprecate_method(message_class, method_name) if field.deprecated?
       end
 
       def typed_default_value
@@ -266,15 +262,10 @@ module Protobuf
 
       def validate_packed_field
         if packed? && ! ::Protobuf::Field::BaseField::PACKED_TYPES.include?(wire_type)
-          raise "Can't use packed encoding for '#{type_class}' type"
+          fail "Can't use packed encoding for '#{type_class}' type"
         end
-      end
-
-      def warn_excess_options(options)
-        warn "WARNING: Invalid options: #{options.inspect} (in #{message_class.name}##{name})"
       end
 
     end
   end
 end
-

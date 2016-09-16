@@ -20,6 +20,10 @@ module Protobuf
         val.respond_to?(:to_f)
       end
 
+      def coerce!(val)
+        Float(val)
+      end
+
       def decode(bytes)
         bytes.unpack('e').first
       end
@@ -35,4 +39,3 @@ module Protobuf
     end
   end
 end
-

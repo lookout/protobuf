@@ -2,7 +2,7 @@ module Protobuf
   module Rpc
     module Middleware
       class ResponseEncoder
-        include ::Protobuf::Logger::LogMethods
+        include ::Protobuf::Logging
 
         attr_reader :app, :env
 
@@ -22,12 +22,12 @@ module Protobuf
           env.log_signature || super
         end
 
-      private
+        private
 
         # Encode the response wrapper to return to the client
         #
         def encoded_response
-          log_debug { sign_message("Encoding response: #{response.inspect}") }
+          logger.debug { sign_message("Encoding response: #{response.inspect}") }
 
           env.encoded_response = wrapped_response.encode
         rescue => exception
@@ -35,7 +35,7 @@ module Protobuf
 
           # Rescue encoding exceptions, re-wrap them as generic protobuf errors,
           # and re-raise them
-          raise PbError.new(exception.message)
+          raise PbError, exception.message
         end
 
         # Prod the object to see if we can produce a proto object as a response
@@ -66,7 +66,7 @@ module Protobuf
           expected = env.response_type
 
           if expected != actual
-            raise BadResponseProto.new("Expected response to be of type #{expected.name} but was #{actual.name}")
+            fail BadResponseProto, "Expected response to be of type #{expected.name} but was #{actual.name}"
           end
 
           candidate

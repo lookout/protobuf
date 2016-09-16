@@ -34,78 +34,78 @@ describe Protobuf::Rpc::Http::Server do
 
     it 'should return the correct response for ReverseModule::ReverseService.reverse' do
       response = client.post "/ReverseModule%3A%3AReverseService/reverse", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode()
-      response.status.should eq 200
-      response.headers['content-type'].should eq "application/x-protobuf"
-      response.headers['x-protobuf-error'].should be_nil
-      response.headers['x-protobuf-error-reason'].should be_nil
-      response.body.should eq ReverseModule::ReverseResponse.new(:reversed => "hello world".reverse).encode()
+      expect(response.status).to eq 200
+      expect(response.headers['content-type']).to eq "application/x-protobuf"
+      expect(response.headers['x-protobuf-error']).to be_nil
+      expect(response.headers['x-protobuf-error-reason']).to be_nil
+      expect(response.body).to eq ReverseModule::ReverseResponse.new(:reversed => "hello world".reverse).encode()
     end
 
     it 'should return the correct response for ReverseModule::ReverseService.reverse when some header is passed' do
       response = client.post "/ReverseModule%3A%3AReverseService/reverse",
                              :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode(),
                              "X-SOME-HEADER" => "yes i am"
-      response.status.should eq 200
-      response.headers['content-type'].should eq "application/x-protobuf"
-      response.headers['x-protobuf-error'].should be_nil
-      response.headers['x-protobuf-error-reason'].should be_nil
-      response.body.should eq ReverseModule::ReverseResponse.new(:reversed => "hello world".reverse,
+      expect(response.status).to eq 200
+      expect(response.headers['content-type']).to eq "application/x-protobuf"
+      expect(response.headers['x-protobuf-error']).to be_nil
+      expect(response.headers['x-protobuf-error-reason']).to be_nil
+      expect(response.body).to eq ReverseModule::ReverseResponse.new(:reversed => "hello world".reverse,
                                                                  :some_reversed_header => "yes i am".reverse).encode()
     end
 
     it 'should return METHOD_NOT_FOUND for ReverseModule::ReverseService.bobloblaw' do
       response = client.post "/ReverseModule%3A%3AReverseService/bobloblaw", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode()
-      response.status.should eq 404
-      response.headers['content-type'].should eq "application/x-protobuf"
-      response.headers['x-protobuf-error'].should eq "ReverseModule::ReverseService#bobloblaw is not a defined RPC method."
-      response.headers['x-protobuf-error-reason'].should eq Protobuf::Socketrpc::ErrorReason::METHOD_NOT_FOUND.to_s
-      response.body.should eq ""
+      expect(response.status).to eq 404
+      expect(response.headers['content-type']).to eq "application/x-protobuf"
+      expect(response.headers['x-protobuf-error']).to eq "ReverseModule::ReverseService#bobloblaw is not a defined RPC method."
+      expect(response.headers['x-protobuf-error-reason']).to eq Protobuf::Socketrpc::ErrorReason::METHOD_NOT_FOUND.to_s
+      expect(response.body).to eq ""
     end
 
     it 'should return SERVICE_NOT_FOUND for Bar::ReverseService.reverse' do
       response = client.post "/Bar%3A%3AReverseService/reverse", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode()
-      response.status.should eq 404
-      response.headers['content-type'].should eq "application/x-protobuf"
-      response.headers['x-protobuf-error'].should eq "Service class Bar::ReverseService is not defined."
-      response.headers['x-protobuf-error-reason'].should eq Protobuf::Socketrpc::ErrorReason::SERVICE_NOT_FOUND.to_s
-      response.body.should eq ""
+      expect(response.status).to eq 404
+      expect(response.headers['content-type']).to eq "application/x-protobuf"
+      expect(response.headers['x-protobuf-error']).to eq "Service class Bar::ReverseService is not defined."
+      expect(response.headers['x-protobuf-error-reason']).to eq Protobuf::Socketrpc::ErrorReason::SERVICE_NOT_FOUND.to_s
+      expect(response.body).to eq ""
     end
 
     it 'should return RPC_FAILED for missing input' do
       response = client.post "/ReverseModule%3A%3AReverseService/reverse", :input => ""
-      response.status.should eq 500
-      response.headers['content-type'].should eq "application/x-protobuf"
-      response.headers['x-protobuf-error-reason'].should eq Protobuf::Socketrpc::ErrorReason::RPC_FAILED.to_s
-      response.body.should eq ""
+      expect(response.status).to eq 500
+      expect(response.headers['content-type']).to eq "application/x-protobuf"
+      expect(response.headers['x-protobuf-error-reason']).to eq Protobuf::Socketrpc::ErrorReason::RPC_FAILED.to_s
+      expect(response.body).to eq ""
     end
 
-    it 'should return RPC_ERROR for invalid input' do
+    it 'should return BAD_REQUEST_DATA for invalid input' do
       response = client.post "/ReverseModule%3A%3AReverseService/reverse", :input => "\\n\\x03foo"
-      response.status.should eq 500
-      response.headers['content-type'].should eq "application/x-protobuf"
-      response.headers['x-protobuf-error-reason'].should eq Protobuf::Socketrpc::ErrorReason::RPC_ERROR.to_s
-      response.body.should eq ""
+      expect(response.status).to eq 400
+      expect(response.headers['content-type']).to eq "application/x-protobuf"
+      expect(response.headers['x-protobuf-error-reason']).to eq Protobuf::Socketrpc::ErrorReason::BAD_REQUEST_DATA.to_s
+      expect(response.body).to eq ""
     end
 
     it 'should return INVALID_REQUEST_PROTO for invalid URL' do
       response = client.post "/foo", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode()
-      response.status.should eq 400
-      response.headers['content-type'].should eq "application/x-protobuf"
-      # response.headers['x-protobuf-error'].should eq "Service class Bar::ReverseService is not defined."
-      response.headers['x-protobuf-error-reason'].should eq Protobuf::Socketrpc::ErrorReason::INVALID_REQUEST_PROTO.to_s
-      response.body.should eq ""
+      expect(response.status).to eq 400
+      expect(response.headers['content-type']).to eq "application/x-protobuf"
+      # expect(response.headers['x-protobuf-error']).to eq "Service class Bar::ReverseService is not defined."
+      expect(response.headers['x-protobuf-error-reason']).to eq Protobuf::Socketrpc::ErrorReason::INVALID_REQUEST_PROTO.to_s
+      expect(response.body).to eq ""
     end
   end
 
   describe '.running?' do
     it 'returns true if running' do
       subject.instance_variable_set(:@running, true)
-      subject.running?.should be_true
+      expect(subject.running?).to be true
     end
 
     it 'returns false if not running' do
       subject.instance_variable_set(:@running, false)
-      subject.running?.should be_false
+      expect(subject.running?).to be false
     end
   end
 
@@ -113,7 +113,7 @@ describe Protobuf::Rpc::Http::Server do
     it 'sets running to false' do
       # subject.instance_variable_set(:@workers, [])
       subject.stop
-      subject.instance_variable_get(:@running).should be_false
+      expect(subject.instance_variable_get(:@running)).to be false
     end
   end
 end

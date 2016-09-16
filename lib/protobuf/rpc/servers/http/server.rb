@@ -8,7 +8,7 @@ module Protobuf
     module Http
       class Server
         include ::Protobuf::Rpc::Server
-        include ::Protobuf::Logger::LogMethods
+        include ::Protobuf::Logging
 
         # TODO: more comprehensive mapping?
         HTTP_STATUSES = {
@@ -97,6 +97,7 @@ module Protobuf
         end
 
         def stop
+          @running = false
         end
       end
     end

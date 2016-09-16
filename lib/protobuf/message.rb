@@ -1,8 +1,20 @@
 require 'protobuf/field'
+require 'protobuf/deprecation'
 require 'protobuf/enum'
 require 'protobuf/exceptions'
 require 'protobuf/message/fields'
 require 'protobuf/message/serialization'
+
+# Under MRI, this optimizes proto decoding by around 15% in tests.
+# When unavailable, we fall to pure Ruby.
+# rubocop:disable Lint/HandleExceptions
+begin
+  require 'varint/varint'
+rescue LoadError
+end
+# rubocop:enable Lint/HandleExceptions
+
+require 'protobuf/varint'
 
 module Protobuf
   class Message
@@ -28,10 +40,11 @@ module Protobuf
 
     def initialize(fields = {})
       @values = {}
-
-      fields.to_hash.each_pair do |name, value|
-        self[name] = value unless value.nil?
+      fields.to_hash.each do |name, value|
+        self[name] = value
       end
+
+      yield self if block_given?
     end
 
     ##
@@ -61,36 +74,41 @@ module Protobuf
     # Iterate over every field, invoking the given block
     #
     def each_field
+      return to_enum(:each_field) unless block_given?
+
       self.class.all_fields.each do |field|
-        value = __send__(field.name)
+        value = __send__(field.getter)
         yield(field, value)
       end
     end
 
     def each_field_for_serialization
       self.class.all_fields.each do |field|
-        next unless field_must_be_serialized?(field)
-
-        value = @values[field.name]
-
+        value = @values[field.getter]
         if value.nil?
-          raise ::Protobuf::SerializationError, "Required field #{self.class.name}##{field.name} does not have a value."
-        else
-          yield(field, value)
+          fail ::Protobuf::SerializationError, "Required field #{self.class.name}##{field.name} does not have a value." if field.required?
+          next
         end
+
+        yield(field, value)
       end
     end
 
-    def has_field?(name)
-      @values.has_key?(name)
+    def field?(name)
+      @values.key?(name)
     end
+    ::Protobuf.deprecator.define_deprecated_methods(self, :has_field? => :field?)
 
     def inspect
-      to_hash.inspect
+      attrs = self.class.fields.map do |field|
+        [field.name, send(field.name).inspect].join('=')
+      end.join(' ')
+
+      "#<#{self.class} #{attrs}>"
     end
 
     def respond_to_has?(key)
-      respond_to?(key) && has_field?(key)
+      respond_to?(key) && field?(key)
     end
 
     def respond_to_has_and_present?(key)
@@ -100,15 +118,15 @@ module Protobuf
 
     # Return a hash-representation of the given fields for this message type.
     def to_hash
-      result = Hash.new
+      result = {}
 
-      @values.keys.each do |field_name|
+      @values.each_key do |field_name|
         value = __send__(field_name)
         hashed_value = value.respond_to?(:to_hash_value) ? value.to_hash_value : value
-        result.merge!(field_name => hashed_value)
+        result[field_name] = hashed_value
       end
 
-      return result
+      result
     end
 
     def to_json(options = {})
@@ -119,23 +137,27 @@ module Protobuf
       self
     end
 
-    def ==(obj)
-      return false unless obj.is_a?(self.class)
+    def ==(other)
+      return false unless other.is_a?(self.class)
       each_field do |field, value|
-        return false unless value == obj.__send__(field.name)
+        return false unless value == other.__send__(field.name)
       end
       true
     end
 
     def [](name)
-      if field = self.class.get_field(name, true)
-        __send__(field.name)
+      if (field = self.class.get_field(name, true))
+        __send__(field.getter)
       end
     end
 
     def []=(name, value)
-      if field = self.class.get_field(name, true)
-        __send__(field.setter_method_name, value)
+      if (field = self.class.get_field(name, true))
+        __send__(field.setter, value) unless value.nil?
+      else
+        unless ::Protobuf.ignore_unknown_fields?
+          fail ::Protobuf::FieldNotDefinedError, name
+        end
       end
     end
 
@@ -157,20 +179,21 @@ module Protobuf
     ##
     # Private Instance Methods
     #
+
     private
 
     def copy_to(object, method)
-      duplicate = proc { |obj|
+      duplicate = proc do |obj|
         case obj
         when Message, String then obj.__send__(method)
         else                      obj
         end
-      }
+      end
 
       object.__send__(:initialize)
       @values.each do |name, value|
         if value.is_a?(::Protobuf::Field::FieldArray)
-          object.__send__(name).replace(value.map {|v| duplicate.call(v)})
+          object.__send__(name).replace(value.map { |v| duplicate.call(v) })
         else
           object.__send__("#{name}=", duplicate.call(value))
         end

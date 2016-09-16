@@ -1,5 +1,5 @@
-$: << ::File.expand_path('../', __FILE__)
-$: << ::File.expand_path('../spec', __FILE__)
+$LOAD_PATH << ::File.expand_path('../', __FILE__)
+$LOAD_PATH << ::File.expand_path('../spec', __FILE__)
 
 require 'fileutils'
 require 'rubygems'
@@ -8,31 +8,34 @@ require 'bundler/gem_tasks'
 require 'benchmark/tasks'
 
 require 'rspec/core/rake_task'
-
-desc 'Default: run specs.'
-task :default => :spec
+require 'rubocop/rake_task'
 
 RSpec::Core::RakeTask.new(:spec)
+RuboCop::RakeTask.new
+
+task :default => ['compile:spec', 'compile:rpc', :spec, :rubocop]
 
 desc 'Run specs'
 namespace :compile do
 
   desc 'Compile spec protos in spec/supprt/ directory'
-  task :spec do |task, args|
+  task :spec do
     proto_path = ::File.expand_path('../spec/support/', __FILE__)
-    cmd = %Q{protoc --plugin=./bin/protoc-gen-ruby --ruby_out=#{proto_path} -I #{proto_path} #{File.join(proto_path, '**', '*.proto')}}
+    proto_files = Dir[File.join(proto_path, '**', '*.proto')]
+    cmd = %(protoc --plugin=./bin/protoc-gen-ruby --ruby_out=#{proto_path} -I #{proto_path} #{proto_files.join(' ')})
 
     puts cmd
-    exec(cmd)
+    system(cmd)
   end
 
   desc 'Compile rpc protos in protos/ directory'
-  task :rpc do |task, args|
+  task :rpc do
     proto_path = ::File.expand_path('../proto', __FILE__)
+    proto_files = Dir[File.join(proto_path, '**', '*.proto')]
     output_dir = ::File.expand_path('../tmp/rpc', __FILE__)
     ::FileUtils.mkdir_p(output_dir)
 
-    cmd = %Q{protoc --plugin=./bin/protoc-gen-ruby --ruby_out=#{output_dir} -I #{proto_path} #{File.join(proto_path, '**', '*.proto')}}
+    cmd = %(protoc --plugin=./bin/protoc-gen-ruby --ruby_out=#{output_dir} -I #{proto_path} #{proto_files.join(' ')})
 
     puts cmd
     system(cmd)
@@ -41,7 +44,7 @@ namespace :compile do
       'tmp/rpc/dynamic_discovery.pb.rb'               => 'lib/protobuf/rpc',
       'tmp/rpc/rpc.pb.rb'                             => 'lib/protobuf/rpc',
       'tmp/rpc/google/protobuf/descriptor.pb.rb'      => 'lib/protobuf/descriptors/google/protobuf',
-      'tmp/rpc/google/protobuf/compiler/plugin.pb.rb' => 'lib/protobuf/descriptors/google/protobuf/compiler'
+      'tmp/rpc/google/protobuf/compiler/plugin.pb.rb' => 'lib/protobuf/descriptors/google/protobuf/compiler',
     }
 
     files.each_pair do |source_file, destination_dir|

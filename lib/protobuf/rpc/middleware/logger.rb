@@ -19,7 +19,7 @@ module Protobuf
           env
         end
 
-      private
+        private
 
         def instrumenter
           @instrumenter ||= Instrumenter.new
@@ -42,7 +42,7 @@ module Protobuf
           attr_reader :env
 
           def flush(env)
-            Protobuf::Logger.info { to_s(env) }
+            ::Protobuf::Logging.logger.info { to_s(env) }
           end
 
           def start
@@ -63,11 +63,11 @@ module Protobuf
               rpc,
               sizes,
               elapsed_time,
-              @end_time.try(:iso8601)
+              @end_time.try(:iso8601),
             ].compact.join(' - ')
           end
 
-        private
+          private
 
           def elapsed_time
             (@start_time && @end_time ? "#{(@end_time - @start_time).round(4)}s" : nil)

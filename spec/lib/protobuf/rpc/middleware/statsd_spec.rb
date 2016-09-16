@@ -46,12 +46,12 @@ describe Protobuf::Rpc::Middleware::Statsd do
       end
 
       it "calls the stack" do
-        app.should_receive(:call).with(env)
+        allow(app).to receive_messages(:call => env)
         subject.call(env)
       end
 
       it "returns the env" do
-        subject.call(env).should eq env
+        expect(subject.call(env)).to  eq env
       end
     end
 
@@ -60,7 +60,7 @@ describe Protobuf::Rpc::Middleware::Statsd do
 
       before :each do
         Protobuf::Statsd.client = statsd_client
-        Protobuf::Rpc::Middleware::Statsd.any_instance.stub(:statsd_base_path).and_return(stats_path)
+        allow_any_instance_of(Protobuf::Rpc::Middleware::Statsd).to receive(:statsd_base_path).and_return(stats_path)
         Timecop.freeze(Time.now)
       end
 

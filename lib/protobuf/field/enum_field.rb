@@ -5,15 +5,27 @@ module Protobuf
     class EnumField < VarintField
 
       ##
+      # Class Methods
+      #
+
+      def self.default
+        fail NoMethodError, "#{self}.#{__method__} must be called on an instance"
+      end
+
+      ##
       # Public Instance Methods
       #
 
       def acceptable?(val)
-        ! type_class.fetch(val).nil?
+        !type_class.fetch(val).nil?
       end
 
       def encode(value)
         super(value.to_i)
+      end
+
+      def decode(value)
+        value if acceptable?(value)
       end
 
       def enum?
@@ -35,7 +47,7 @@ module Protobuf
               @values.delete(field.name)
             else
               value = field.type_class.fetch(value)
-              raise TypeError, "Invalid Enum value: #{orig_value.inspect} for #{field.name}" unless value
+              fail TypeError, "Invalid Enum value: #{orig_value.inspect} for #{field.name}" unless value
 
               @values[field.name] = value
             end
@@ -47,11 +59,10 @@ module Protobuf
         if default.is_a?(Symbol)
           type_class.const_get(default)
         else
-          self.class.default
+          type_class.fetch(default) || type_class.enums.first
         end
       end
 
     end
   end
 end
-

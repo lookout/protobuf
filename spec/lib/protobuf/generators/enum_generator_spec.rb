@@ -2,43 +2,49 @@ require 'spec_helper'
 
 require 'protobuf/generators/enum_generator'
 
-describe ::Protobuf::Generators::EnumGenerator do
+RSpec.describe ::Protobuf::Generators::EnumGenerator do
 
-  let(:values) {
+  let(:values) do
     [
       { :name => 'FOO', :number => 1 },
       { :name => 'BAR', :number => 2 },
-      { :name => 'BAZ', :number => 3 }
+      { :name => 'BAZ', :number => 3 },
     ]
-  }
+  end
   let(:options) { nil }
-  let(:enum_fields) { { :name => 'TestEnum',
-                        :value => values,
-                        :options => options } }
+  let(:enum_fields) do
+    {
+      :name => 'TestEnum',
+      :value => values,
+      :options => options,
+    }
+  end
 
   let(:enum) { ::Google::Protobuf::EnumDescriptorProto.new(enum_fields) }
 
   subject { described_class.new(enum) }
 
   describe '#compile' do
-    let(:compiled) {
-      %q{class TestEnum < ::Protobuf::Enum
+    let(:compiled) do
+      <<-RUBY
+class TestEnum < ::Protobuf::Enum
   define :FOO, 1
   define :BAR, 2
   define :BAZ, 3
 end
 
-}
-    }
+      RUBY
+    end
 
-    it 'compiles the enum and it\'s field values' do
+    it 'compiles the enum and its field values' do
       subject.compile
-      subject.to_s.should eq(compiled)
+      expect(subject.to_s).to eq(compiled)
     end
 
     context 'when allow_alias option is set' do
-      let(:compiled) {
-        %q{class TestEnum < ::Protobuf::Enum
+      let(:compiled) do
+        <<-RUBY
+class TestEnum < ::Protobuf::Enum
   set_option :allow_alias
 
   define :FOO, 1
@@ -46,23 +52,22 @@ end
   define :BAZ, 3
 end
 
-}
-    }
+        RUBY
+      end
 
       let(:options) { { :allow_alias => true } }
 
       it 'sets the allow_alias option' do
         subject.compile
-        subject.to_s.should eq(compiled)
+        expect(subject.to_s).to eq(compiled)
       end
     end
   end
 
   describe '#build_value' do
     it 'returns a string identifying the given enum value' do
-      subject.build_value(enum.value.first).should eq("define :FOO, 1")
+      expect(subject.build_value(enum.value.first)).to eq("define :FOO, 1")
     end
   end
 
 end
-

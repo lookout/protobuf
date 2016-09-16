@@ -27,11 +27,11 @@ module Protobuf
         @default_value ||= begin
                              if defaulted?
                                case descriptor.type.name
-                               when :TYPE_ENUM then
+                               when :TYPE_ENUM
                                  enum_default_value
-                               when :TYPE_STRING, :TYPE_BYTES then
+                               when :TYPE_STRING, :TYPE_BYTES
                                  string_default_value
-                               when :TYPE_FLOAT, :TYPE_DOUBLE then
+                               when :TYPE_FLOAT, :TYPE_DOUBLE
                                  float_double_default_value
                                else
                                  verbatim_default_value
@@ -54,7 +54,7 @@ module Protobuf
 
       def compile
         run_once(:compile) do
-          field_definition = [ "#{label} #{type_name}", name, number, applicable_options ]
+          field_definition = ["#{label} #{type_name}", name, number, applicable_options]
           puts field_definition.flatten.compact.join(', ')
         end
       end
@@ -91,10 +91,10 @@ module Protobuf
         @type_name ||= begin
                          case descriptor.type.name
                          when :TYPE_MESSAGE, :TYPE_ENUM, :TYPE_GROUP then
-                           type_name = modulize(descriptor.type_name)
+                           modulize(descriptor.type_name)
                          else
                            type_name = descriptor.type.name.to_s.downcase.sub(/type_/, '')
-                           type_name = ":#{type_name}"
+                           ":#{type_name}"
                          end
                        end
       end
@@ -119,7 +119,7 @@ module Protobuf
       end
 
       def string_default_value
-        %Q{"#{verbatim_default_value.gsub(/'/, '\\\\\'')}"}
+        %("#{verbatim_default_value.gsub(/'/, '\\\\\'')}")
       end
 
       def verbatim_default_value
@@ -129,4 +129,3 @@ module Protobuf
     end
   end
 end
-

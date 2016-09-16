@@ -1,3 +1,4 @@
+
 require 'protobuf/rpc/connectors/base'
 require 'cgi'
 require 'faraday'
@@ -7,7 +8,7 @@ module Protobuf
     module Connectors
       class Http < Base
         include Protobuf::Rpc::Connectors::Common
-        include Protobuf::Logger::LogMethods
+        include Protobuf::Logging
 
         def send_request
           timeout_wrap do
@@ -23,12 +24,12 @@ module Protobuf
         # private
 
         def close_connection
-          log_debug { sign_message('Connector closed')  }
+          logger.debug { sign_message('Connector closed')  }
         end
 
         # Method to determine error state, must be used with Connector api
         def error?
-          log_debug { sign_message("Error state : #{@error}")  }
+          logger.debug { sign_message("Error state : #{@error}")  }
           if @error
             true
           else

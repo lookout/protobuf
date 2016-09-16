@@ -2,7 +2,7 @@ module Protobuf
   module Rpc
     module Middleware
       class ExceptionHandler
-        include ::Protobuf::Logger::LogMethods
+        include ::Protobuf::Logging
 
         attr_reader :app
 
@@ -22,7 +22,7 @@ module Protobuf
           env
         end
 
-      private
+        private
 
         # Wrap exceptions in a generic Protobuf errors unless they already are
         #
