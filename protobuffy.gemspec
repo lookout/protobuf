@@ -1,12 +1,12 @@
 # encoding: UTF-8
-$:.push ::File.expand_path("../lib", __FILE__)
+$LOAD_PATH.push ::File.expand_path("../lib", __FILE__)
 require "protobuf/version"
 
 ::Gem::Specification.new do |s|
   s.name          = 'protobuffy'
   s.version       = ::Protobuf::VERSION
   s.date          = ::Time.now.strftime('%Y-%m-%d')
-  s.license       = 'WTFPL'
+  s.license       = 'MIT'
 
   s.authors       = ['BJ Neilsen', 'Brandon Dewitt', 'Devin Christensen', 'Adam Hutchison', 'R. Tyler Croy',]
   s.email         = ['bj.neilsen+protobuf@gmail.com', 'brandonsdewitt+protobuf@gmail.com', 'quixoten@gmail.com', 'liveh2o@gmail.com', 'tyler@monkeypox.org']
@@ -19,26 +19,39 @@ require "protobuf/version"
   s.executables   = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  if RUBY_VERSION =~ /^2/
-    s.add_dependency 'activesupport'
-  else
-    s.add_dependency 'activesupport', '< 5'
-  end
-
+  # Hack, as Rails 5 requires Ruby version >= 2.2.2.
+  active_support_max_version = "< 5" if Gem::Version.new(RUBY_VERSION) < Gem::Version.new("2.2.2")
+  s.add_dependency "activesupport", '>= 3.2', active_support_max_version
   s.add_dependency 'middleware'
-  s.add_dependency 'multi_json', '~> 1.0'
   s.add_dependency 'thor'
-  s.add_dependency 'json', '< 2.0'
+  s.add_dependency 'thread_safe'
 
+  s.add_development_dependency 'ffi-rzmq'
+  s.add_development_dependency 'rake', '< 11.0' # Rake 11.0.1 removes the last_comment method which rspec-core (< 3.4.4) uses
   s.add_development_dependency 'rack', '~> 1.0'
   s.add_development_dependency 'faraday'
-  s.add_development_dependency 'ffi-rzmq'
-  s.add_development_dependency 'pry-nav'
-  s.add_development_dependency 'rake'
-  s.add_development_dependency 'rspec', '2.99.0'
+  s.add_development_dependency 'rspec', '>= 3.0'
+  s.add_development_dependency "rubocop", "~> 0.35.0"
+  s.add_development_dependency "parser", "2.3.0.6" # Locked this down since 2.3.0.7 causes issues. https://github.com/bbatsov/rubocop/pull/2984
   s.add_development_dependency 'simplecov'
-  s.add_development_dependency 'yard'
   s.add_development_dependency 'timecop'
+  s.add_development_dependency 'yard'
 
-  s.add_development_dependency 'ruby-prof' if RUBY_ENGINE.to_sym == :ruby
+  # debuggers only work in MRI
+  if RUBY_ENGINE.to_sym == :ruby
+    # we don't support MRI < 1.9.3
+    pry_debugger = if RUBY_VERSION < '2.0.0'
+                     'pry-debugger'
+                   else
+                     'pry-byebug'
+                   end
+
+    s.add_development_dependency pry_debugger
+    s.add_development_dependency 'pry-stack_explorer'
+
+    s.add_development_dependency 'varint'
+    s.add_development_dependency 'ruby-prof'
+  else
+    s.add_development_dependency 'pry'
+  end
 end

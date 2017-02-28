@@ -5,9 +5,8 @@ shared_examples "a Protobuf Connector" do
 
   context "API" do
     # Check the API
-    specify{ subject.respond_to?(:send_request, true).should be_true }
-    specify{ subject.respond_to?(:post_init, true).should be_true }
-    specify{ subject.respond_to?(:close_connection, true).should be_true }
-    specify{ subject.respond_to?(:error?, true).should be_true }
+    specify{ subject.respond_to?(:send_request, true).should be true }
+    specify{ subject.respond_to?(:close_connection, true).should be true }
+    specify{ subject.respond_to?(:error?, true).should be true }
   end
 end

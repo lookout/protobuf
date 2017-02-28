@@ -4,10 +4,9 @@ require 'faraday'
 
 describe ::Protobuf::Rpc::Connectors::Http do
   subject { described_class.new({}) }
-  
-  it_behaves_like "a Protobuf Connector"
 
-  specify{ described_class.include?(Protobuf::Rpc::Connectors::Common).should be_true }
+  it_behaves_like "a Protobuf Connector"
+  specify{ subject.respond_to?(:post_init, true).should be true }
 
   let(:client_double) do
     Faraday.new do |builder|

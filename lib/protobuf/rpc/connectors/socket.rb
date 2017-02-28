@@ -4,8 +4,7 @@ module Protobuf
   module Rpc
     module Connectors
       class Socket < Base
-        include Protobuf::Rpc::Connectors::Common
-        include Protobuf::Logger::LogMethods
+        include Protobuf::Logging
 
         def send_request
           timeout_wrap do
@@ -24,19 +23,25 @@ module Protobuf
 
         def close_connection
           @socket.close
-          log_debug { sign_message('Connector closed')  }
+          logger.debug { sign_message('Connector closed') }
         end
 
         def connect_to_rpc_server
-          @socket = TCPSocket.new(options[:host], options[:port])
-          log_debug { sign_message("Connection established #{options[:host]}:#{options[:port]}")  }
+          @socket ||= TCPSocket.new(options[:host], options[:port])
+          logger.debug { sign_message("Connection established #{options[:host]}:#{options[:port]}") }
         end
 
         # Method to determine error state, must be used with Connector api
         def error?
           return true if @error
-          log_debug { sign_message("Error state : #{@socket.closed?}")  }
+          logger.debug { sign_message("Error state : #{@socket.closed?}") }
           @socket.closed?
+        end
+
+        def post_init
+          send_data unless error?
+        rescue => e
+          failure(:RPC_ERROR, "Connection error: #{e.message}")
         end
 
         def read_data
@@ -51,7 +56,7 @@ module Protobuf
         end
 
         def read_response
-          log_debug { sign_message("error? is #{error?}") }
+          logger.debug { sign_message("error? is #{error?}") }
           return if error?
           response_buffer = ::Protobuf::Rpc::Buffer.new(:read)
           response_buffer << read_data
@@ -65,7 +70,7 @@ module Protobuf
           request_buffer.set_data(@request_data)
           @socket.write(request_buffer.write)
           @socket.flush
-          log_debug { sign_message("write closed") }
+          logger.debug { sign_message("write closed") }
         end
       end
     end

@@ -1,17 +1,21 @@
-require 'protobuf/logger'
+require 'protobuf/logging'
 
 module Protobuf
   module Rpc
     class ServiceDispatcher
-      include ::Protobuf::Logger::LogMethods
+      include ::Protobuf::Logging
 
       attr_reader :env
 
-      def initialize(app)
+      def initialize(_app)
         # End of the line...
       end
 
       def call(env)
+        dup._call(env)
+      end
+
+      def _call(env)
         @env = env
 
         env.response = dispatch_rpc_request
@@ -22,15 +26,10 @@ module Protobuf
         @rpc_service ||= env.rpc_service.new(env)
       end
 
-    private
+      private
 
-      # Call the given service method.
       def dispatch_rpc_request
-        unless rpc_service.respond_to?(method_name)
-          raise MethodNotFound.new("#{service_name}##{method_name} is not a publicly defined method.")
-        end
-
-        rpc_service.callable_rpc_method(method_name).call
+        rpc_service.call(method_name)
         rpc_service.response
       end
 

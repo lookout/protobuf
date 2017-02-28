@@ -5,46 +5,50 @@ require 'stringio'
 
 require 'active_support/core_ext/object/blank'
 require 'active_support/core_ext/object/try'
-require 'active_support/notifications'
 require 'active_support/inflector'
 require 'active_support/json'
+require 'active_support/notifications'
+
+# All top-level run time code requires, ordered by necessity
+require 'protobuf/wire_type'
+
+require 'protobuf/varint_pure'
+require 'protobuf/varint'
+
+require 'protobuf/exceptions'
+require 'protobuf/deprecation'
+require 'protobuf/logging'
+
+require 'protobuf/encoder'
+require 'protobuf/decoder'
+
+require 'protobuf/optionable'
+require 'protobuf/field'
+require 'protobuf/enum'
+require 'protobuf/message'
+require 'protobuf/descriptors'
 
 module Protobuf
 
-  # See Protobuf#connector_type documentation.
-  CONNECTORS = [ :socket, :zmq, :http ].freeze
+  class << self
+    # Client Host
+    #
+    # Default: `hostname` of the system
+    #
+    # The name or address of the host to use during client RPC calls.
+    attr_writer :client_host
+  end
 
-  # Default is Socket as it has no external dependencies.
-  DEFAULT_CONNECTOR = :socket
-
-  module_function
-
-  # Client Host
-  #
-  # Default: `hostname` of the system
-  #
-  # The name or address of the host to use during client RPC calls.
   def self.client_host
-    @_client_host ||= `hostname`.chomp
+    @client_host ||= Socket.gethostname
   end
 
-  def self.client_host=(host)
-    @_client_host = host
+  def self.connector_type_class
+    @connector_type_class ||= ::Protobuf::Rpc::Connectors::Socket
   end
 
-  # Connector Type
-  #
-  # Default: socket
-  #
-  # Symbol value which denotes the type of connector to use
-  # during client requests to an RPC server.
-  def self.connector_type
-    @_connector_type ||= DEFAULT_CONNECTOR
-  end
-
-  def self.connector_type=(type)
-    raise ArgumentError, 'Invalid connector type given' unless CONNECTORS.include?(type)
-    @_connector_type = type
+  def self.connector_type_class=(type_class)
+    @connector_type_class = type_class
   end
 
   # GC Pause during server requests
@@ -56,51 +60,50 @@ module Protobuf
   # Once the request is completed, the GC is enabled again.
   # This optomization provides a huge boost in speed to rpc requests.
   def self.gc_pause_server_request?
-    return @_gc_pause_server_request unless @_gc_pause_server_request.nil?
+    return @gc_pause_server_request unless @gc_pause_server_request.nil?
     self.gc_pause_server_request = false
   end
 
   def self.gc_pause_server_request=(value)
-    @_gc_pause_server_request = !!value
+    @gc_pause_server_request = !!value
   end
 
-  # Print Deprecation Warnings
+  # Permit unknown field on Message initialization
   #
   # Default: true
   #
-  # Simple boolean to define whether we want field deprecation warnings to
-  # be printed to stderr or not. The rpc_server has an option to set this value
-  # explicitly, or you can turn this option off by setting
-  # ENV['PB_IGNORE_DEPRECATIONS'] to a non-empty value.
-  #
-  # The rpc_server option will override the ENV setting.
-  def self.print_deprecation_warnings?
-    return @_print_deprecation_warnings unless @_print_deprecation_warnings.nil?
-    self.print_deprecation_warnings = ENV.key?('PB_IGNORE_DEPRECATIONS') ? false : true
+  # Simple boolean to define whether we want to permit unknown fields
+  # on Message intialization; otherwise a ::Protobuf::FieldNotDefinedError is thrown.
+  def self.ignore_unknown_fields?
+    !defined?(@ignore_unknown_fields) || @ignore_unknown_fields
   end
 
-  def self.print_deprecation_warnings=(value)
-    @_print_deprecation_warnings = !!value
+  def self.ignore_unknown_fields=(value)
+    @ignore_unknown_fields = !!value
   end
-
 end
 
 unless ENV.key?('PB_NO_NETWORKING')
   require 'protobuf/rpc/client'
   require 'protobuf/rpc/service'
 
-  env_connector_type = ENV.fetch('PB_CLIENT_TYPE') {
-    ::Protobuf::DEFAULT_CONNECTOR
-  }.to_s.downcase.strip.to_sym
+  env_connector_type = ENV.fetch('PB_CLIENT_TYPE') do
+    :socket
+  end
 
-  if ::Protobuf::CONNECTORS.include?(env_connector_type)
-    require "protobuf/#{env_connector_type}"
+  symbolized_connector_type = env_connector_type.to_s.downcase.strip.to_sym
+  if [:zmq, :socket].include?(symbolized_connector_type)
+    require "protobuf/#{symbolized_connector_type}"
+
+    case symbolized_connector_type
+    when :zmq
+      ::Protobuf.connector_type_class = ::Protobuf::Rpc::Connectors::Zmq
+    else
+      ::Protobuf.connector_type_class = ::Protobuf::Rpc::Connectors::Socket
+    end
   else
-    $stderr.puts <<-WARN
-    [WARNING] Require attempted on an invalid connector type '#{env_connector_type}'.
-              Falling back to default '#{::Protobuf::DEFAULT_CONNECTOR}' connector.
-    WARN
-
-    require "protobuf/#{::Protobuf::DEFAULT_CONNECTOR}"
+    require "#{env_connector_type}"
+    classified = env_connector_type.classify
+    ::Protobuf.connector_type_class = classified.constantize
   end
 end

@@ -1,12 +1,12 @@
 require 'protobuf/rpc/server'
-require 'protobuf/logger'
+require 'protobuf/logging'
 
 module Protobuf
   module Rpc
     module Socket
       class Worker
         include ::Protobuf::Rpc::Server
-        include ::Protobuf::Logger::LogMethods
+        include ::Protobuf::Logging
 
         def initialize(sock, &complete_cb)
           @socket = sock
@@ -33,7 +33,7 @@ module Protobuf
         end
 
         def send_data(data)
-          raise 'Socket closed unexpectedly' unless socket_writable?
+          fail 'Socket closed unexpectedly' unless socket_writable?
           response_buffer = Protobuf::Rpc::Buffer.new(:write)
           response_buffer.set_data(data)
 
@@ -44,7 +44,7 @@ module Protobuf
         end
 
         def log_signature
-          @_log_signature ||= "server-#{self.class}-#{object_id}"
+          @_log_signature ||= "[server-#{self.class}-#{object_id}]"
         end
 
         def socket_writable?

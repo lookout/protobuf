@@ -14,7 +14,7 @@
 #   gem 'protobuf', :require => 'protobuf/http'
 #
 require 'protobuf'
-Protobuf.connector_type = :http
-
 require 'protobuf/rpc/servers/http/server'
 require 'protobuf/rpc/connectors/http'
+
+::Protobuf.connector_type_class = ::Protobuf::Rpc::Connectors::Http

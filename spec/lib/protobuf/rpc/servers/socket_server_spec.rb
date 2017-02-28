@@ -1,9 +1,9 @@
 require 'spec_helper'
-require 'spec/support/test/resource_service'
 require 'protobuf/rpc/servers/socket_runner'
 require 'protobuf/socket'
+require SUPPORT_PATH.join('resource_service')
 
-describe Protobuf::Rpc::Socket::Server do
+RSpec.describe Protobuf::Rpc::Socket::Server do
   before(:each) do
     load 'protobuf/socket.rb'
   end
@@ -14,7 +14,7 @@ describe Protobuf::Rpc::Socket::Server do
     @options = OpenStruct.new(:host => "127.0.0.1", :port => 9399, :backlog => 100, :threshold => 100)
     @runner = ::Protobuf::Rpc::SocketRunner.new(@options)
     @server = @runner.instance_variable_get(:@server)
-    @server_thread = Thread.new(@runner) { |runner| runner.run }
+    @server_thread = Thread.new(@runner, &:run)
     Thread.pass until @server.running?
   end
 
@@ -24,15 +24,15 @@ describe Protobuf::Rpc::Socket::Server do
   end
 
   it "Runner provides a stop method" do
-    @runner.should respond_to(:stop)
+    expect(@runner).to respond_to(:stop)
   end
 
   it "provides a stop method" do
-    @server.should respond_to(:stop)
+    expect(@server).to respond_to(:stop)
   end
 
   it "signals the Server is running" do
-    @server.should be_running
+    expect(@server).to be_running
   end
 
 end
