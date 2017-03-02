@@ -3,6 +3,8 @@ require 'protobuf/field/varint_field'
 module Protobuf
   module Field
     class BoolField < VarintField
+      FALSE_STRING = "false".freeze
+      TRUE_STRING = "true".freeze
 
       ##
       # Class Methods
@@ -12,13 +14,21 @@ module Protobuf
         false
       end
 
-
       ##
       # Public Instance Methods
       # #
 
       def acceptable?(val)
-        [true, false].include?(val)
+        [true, false].include?(val) || %w(true false).include?(val)
+      end
+
+      def coerce!(val)
+        case val
+        when String
+          val == TRUE_STRING
+        else
+          val
+        end
       end
 
       def decode(value)
@@ -35,19 +45,13 @@ module Protobuf
       # Private Instance Methods
       #
 
-      def define_getter
+      def define_accessor(simple_field_name, _fully_qualified_field_name)
         super
-
-        field = self
         message_class.class_eval do
-          define_method("#{field.getter_method_name}?") do
-            field.warn_if_deprecated
-            @values.fetch(field.name, field.default_value)
-          end
+          alias_method "#{simple_field_name}?", simple_field_name
         end
       end
 
     end
   end
 end
-

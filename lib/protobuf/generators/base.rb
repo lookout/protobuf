@@ -15,16 +15,10 @@ module Protobuf
         end
 
         unless ENV.key?('PB_NO_TAG_WARNINGS')
-          range = (tags.min)..(tags.max)
-          if range.respond_to?(:size)
-            expected_size = range.size
-          else
-            expected_size = range.to_a.size
-          end
-
+          expected_size = tags.max - tags.min + 1
           if tags.size < expected_size
             ::Protobuf::CodeGenerator.print_tag_warning_suppress
-            ::Protobuf::CodeGenerator.warn("#{type_name} object should have #{expected_size} tags (#{range.begin}..#{range.end}), but found #{tags.size} tags.")
+            ::Protobuf::CodeGenerator.warn("#{type_name} object should have #{expected_size} tags (#{tags.min}..#{tags.max}), but found #{tags.size} tags.")
           end
         end
       end
@@ -62,10 +56,9 @@ module Protobuf
       end
 
       def type_namespace
-        @type_namespace ||= @namespace + [ descriptor.name ]
+        @type_namespace ||= @namespace + [descriptor.name]
       end
 
     end
   end
 end
-

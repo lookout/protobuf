@@ -2,7 +2,7 @@ module Protobuf
   module Rpc
     module Middleware
       class RequestDecoder
-        include ::Protobuf::Logger::LogMethods
+        include ::Protobuf::Logging
 
         attr_reader :app, :env
 
@@ -11,8 +11,13 @@ module Protobuf
         end
 
         def call(env)
+          dup._call(env)
+        end
+
+        def _call(env)
           @env = env
 
+          logger.debug { sign_message("Decoding request: #{env.encoded_request}") }
           env.service_name = service_name
           env.method_name = method_name
           env.request = request
@@ -30,38 +35,29 @@ module Protobuf
           env.log_signature || super
         end
 
-      private
+        private
 
         def method_name
-          @method_name ||= begin
-            method_name = request_wrapper.method_name.underscore.to_sym
+          return @method_name unless @method_name.nil?
 
-            unless service.rpc_method?(method_name)
-              raise MethodNotFound.new("#{service.name}##{method_name} is not a defined RPC method.")
-            end
-
-            method_name
-          end
+          @method_name = request_wrapper.method_name.underscore.to_sym
+          fail MethodNotFound, "#{service.name}##{@method_name} is not a defined RPC method." unless service.rpc_method?(@method_name)
+          @method_name
         end
 
         def request
-          @request ||= begin
-            data = request_wrapper.request_proto
-            rpc_method.request_type.decode(data)
-          end
+          fail if request_wrapper.request_proto.blank?
+          @request ||= rpc_method.request_type.decode(request_wrapper.request_proto)
         rescue => exception
-          raise BadRequestData.new("Unable to decode request: #{exception.message}")
+          raise BadRequestData, "Unable to decode request: #{exception.message}"
         end
 
         # Decode the incoming request object into our expected request object
         #
         def request_wrapper
-          @request_wrapper ||= begin
-            log_debug { sign_message("Decoding request: #{env.encoded_request}") }
-            Socketrpc::Request.decode(env.encoded_request)
-          end
+          @request_wrapper ||= Socketrpc::Request.decode(env.encoded_request)
         rescue => exception
-          raise BadRequestData.new("Unable to decode request: #{exception.message}")
+          raise BadRequestData, "Unable to decode request: #{exception.message}"
         end
 
         def rpc_method
@@ -71,7 +67,7 @@ module Protobuf
         def service
           @service ||= service_name.constantize
         rescue NameError
-          raise ServiceNotFound.new("Service class #{service_name} is not defined.")
+          raise ServiceNotFound, "Service class #{service_name} is not defined."
         end
 
         def service_name

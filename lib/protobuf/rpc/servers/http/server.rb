@@ -8,7 +8,7 @@ module Protobuf
     module Http
       class Server
         include ::Protobuf::Rpc::Server
-        include ::Protobuf::Logger::LogMethods
+        include ::Protobuf::Logging
 
         # TODO: more comprehensive mapping?
         HTTP_STATUSES = {
@@ -71,7 +71,7 @@ module Protobuf
               :error => rpc_response[:error],
               :reason => rpc_response[:error_reason]
           end
-          
+
           return protobuf_http_response 200, :body => rpc_response['response_proto']
         end
 

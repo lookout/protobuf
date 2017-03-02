@@ -1,77 +1,104 @@
 require 'spec_helper'
 require 'protobuf'
 
-describe ::Protobuf do
+RSpec.describe ::Protobuf do
 
   describe '.client_host' do
-    after { ::Protobuf.instance_variable_set(:@_client_host, nil) }
+    after { ::Protobuf.client_host = nil }
 
     subject { ::Protobuf.client_host }
 
     context 'when client_host is not pre-configured' do
-      it { should eq `hostname`.chomp }
+      it { is_expected.to eq ::Socket.gethostname }
     end
 
     context 'when client_host is pre-configured' do
       let(:hostname) { 'override.myhost.com' }
       before { ::Protobuf.client_host = hostname }
-      it { should eq hostname }
+      it { is_expected.to eq hostname }
     end
   end
 
-  describe '.connector_type' do
-    before { described_class.instance_variable_set(:@_connector_type, nil) }
-
-    it 'defaults to socket' do
-      described_class.connector_type.should eq :socket
+  describe '.connector_type_class' do
+    it "defaults to Socket" do
+      described_class.connector_type_class = nil
+      expect(described_class.connector_type_class).to eq(::Protobuf::Rpc::Connectors::Socket)
     end
 
-    it 'accepts socket or zmq' do
-      [:socket, :zmq].each do |type|
-        described_class.connector_type = type
-        described_class.connector_type.should eq type
-      end
+    it 'fails if fails to load the PB_CLIENT_TYPE' do
+      ENV['PB_CLIENT_TYPE'] = "something_to_autoload"
+      expect { load 'protobuf.rb' }.to raise_error(LoadError, /something_to_autoload/)
+      ENV.delete('PB_CLIENT_TYPE')
     end
 
-    it 'does not accept other types' do
-      [:hello, :world, :evented].each do |type|
-        expect {
-          described_class.connector_type = type
-        }.to raise_error(ArgumentError)
-      end
+    it 'loads the connector type class from PB_CLIENT_TYPE' do
+      ENV['PB_CLIENT_TYPE'] = "protobuf/rpc/connectors/zmq"
+      load 'protobuf.rb'
+      expect(::Protobuf.connector_type_class).to eq(::Protobuf::Rpc::Connectors::Zmq)
+      ENV.delete('PB_CLIENT_TYPE')
     end
   end
 
   describe '.gc_pause_server_request?' do
-    before { described_class.instance_variable_set(:@_gc_pause_server_request, nil) }
+    before { described_class.instance_variable_set(:@gc_pause_server_request, nil) }
 
     it 'defaults to a false value' do
-      described_class.gc_pause_server_request?.should be_false
+      expect(described_class.gc_pause_server_request?).to be false
     end
 
     it 'is settable' do
       described_class.gc_pause_server_request = true
-      described_class.gc_pause_server_request?.should be_true
+      expect(described_class.gc_pause_server_request?).to be true
     end
   end
 
   describe '.print_deprecation_warnings?' do
-    before { described_class.instance_variable_set(:@_print_deprecation_warnings, nil) }
+    around do |example|
+      orig = described_class.print_deprecation_warnings?
+      example.call
+      described_class.print_deprecation_warnings = orig
+    end
 
     it 'defaults to a true value' do
-      described_class.print_deprecation_warnings?.should be_true
+      allow(ENV).to receive(:key?).with('PB_IGNORE_DEPRECATIONS').and_return(false)
+      described_class.instance_variable_set('@field_deprecator', nil)
+      expect(described_class.print_deprecation_warnings?).to be true
     end
 
     it 'is settable' do
       described_class.print_deprecation_warnings = false
-      described_class.print_deprecation_warnings?.should be_false
+      expect(described_class.print_deprecation_warnings?).to be false
     end
 
     context 'when ENV["PB_IGNORE_DEPRECATIONS"] present' do
       it 'defaults to a false value' do
-        ENV['PB_IGNORE_DEPRECATIONS'] = '1'
-        described_class.print_deprecation_warnings?.should be_false
+        allow(ENV).to receive(:key?).with('PB_IGNORE_DEPRECATIONS').and_return(true)
+        described_class.instance_variable_set('@field_deprecator', nil)
+        expect(described_class.print_deprecation_warnings?).to be false
       end
+    end
+  end
+
+  describe '.ignore_unknown_fields?' do
+    around do |example|
+      orig = described_class.ignore_unknown_fields?
+      example.call
+      described_class.ignore_unknown_fields = orig
+    end
+
+    it 'defaults to a true value' do
+      if described_class.instance_variable_defined?('@ignore_unknown_fields')
+        described_class.send(:remove_instance_variable, '@ignore_unknown_fields')
+      end
+      expect(described_class.ignore_unknown_fields?).to be true
+    end
+
+    it 'is settable' do
+      expect do
+        described_class.ignore_unknown_fields = false
+      end.to change {
+        described_class.ignore_unknown_fields?
+      }.from(true).to(false)
     end
   end
 

@@ -1,22 +1,27 @@
 require 'spec_helper'
 require 'protobuf/lifecycle'
 
-describe ::Protobuf::Lifecycle do
+RSpec.describe ::Protobuf::Lifecycle do
   subject { described_class }
 
-  before(:each) do
+  around do |example|
+    # this entire class is deprecated
+    ::Protobuf.deprecator.silence(&example)
+  end
+
+  before do
     ::ActiveSupport::Notifications.notifier = ::ActiveSupport::Notifications::Fanout.new
   end
 
   it "registers a string as the event_name" do
-    ::ActiveSupport::Notifications.should_receive(:subscribe).with("something")
-      subject.register("something") { true }
+    expect(::ActiveSupport::Notifications).to receive(:subscribe).with("something")
+    subject.register("something") { true }
   end
 
   it "only registers blocks for event callbacks" do
-    expect {
+    expect do
       subject.register("something")
-    }.to raise_error( /block/ )
+    end.to raise_error(/block/)
   end
 
   it "calls the registered block when triggered" do
@@ -26,8 +31,8 @@ describe ::Protobuf::Lifecycle do
     end
 
     subject.trigger("this")
-    this.should_not be_nil
-    this.should eq("not nil")
+    expect(this).to_not be_nil
+    expect(this).to eq("not nil")
   end
 
   it "calls multiple registered blocks when triggered" do
@@ -43,10 +48,10 @@ describe ::Protobuf::Lifecycle do
     end
 
     subject.trigger("this")
-    this.should_not be_nil
-    this.should eq("not nil")
-    that.should_not be_nil
-    that.should eq("not nil")
+    expect(this).to_not be_nil
+    expect(this).to eq("not nil")
+    expect(that).to_not be_nil
+    expect(that).to eq("not nil")
   end
 
   context 'when the registered block has arity' do
@@ -55,12 +60,12 @@ describe ::Protobuf::Lifecycle do
         outer_bar = nil
 
         subject.register('foo') do |bar|
-          bar.should be_nil
+          expect(bar).to be_nil
           outer_bar = 'triggered'
         end
 
         subject.trigger('foo')
-        outer_bar.should eq 'triggered'
+        expect(outer_bar).to eq 'triggered'
       end
     end
 
@@ -69,21 +74,21 @@ describe ::Protobuf::Lifecycle do
         outer_bar = nil
 
         subject.register('foo') do |bar|
-          bar.should_not be_nil
+          expect(bar).to_not be_nil
           outer_bar = bar
         end
 
         subject.trigger('foo', 'baz')
-        outer_bar.should eq 'baz'
+        expect(outer_bar).to eq 'baz'
       end
     end
   end
 
   context "normalized event names" do
-    specify { subject.normalized_event_name(:derp).should eq("derp") }
-    specify { subject.normalized_event_name(:Derp).should eq("derp") }
-    specify { subject.normalized_event_name("DERP").should eq("derp") }
-    specify { subject.normalized_event_name("derp").should eq("derp") }
+    specify { expect(subject.normalized_event_name(:derp)).to eq("derp") }
+    specify { expect(subject.normalized_event_name(:Derp)).to eq("derp") }
+    specify { expect(subject.normalized_event_name("DERP")).to eq("derp") }
+    specify { expect(subject.normalized_event_name("derp")).to eq("derp") }
   end
 
 end

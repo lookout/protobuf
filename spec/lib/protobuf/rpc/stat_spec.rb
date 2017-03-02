@@ -2,12 +2,10 @@ require 'spec_helper'
 require 'timecop'
 require 'active_support/core_ext/numeric/time'
 
-describe ::Protobuf::Rpc::Stat do
+RSpec.describe ::Protobuf::Rpc::Stat do
 
   before(:all) do
-    unless defined?(BarService)
-      class BarService < ::Struct.new(:method_name); end
-    end
+    BarService = ::Struct.new(:method_name) unless defined?(BarService)
   end
 
   describe 'server mode' do
@@ -21,7 +19,7 @@ describe ::Protobuf::Rpc::Stat do
 
         ::Timecop.freeze(1.62.seconds.from_now) do
           stats.stop
-          stats.to_s.should eq "[SRV] - myserver1 - #{stats.trace_id} - BarService#find_bars - 43B/1302B - 1.62s - #{::Time.now.iso8601}"
+          expect(stats.to_s).to eq "[SRV] - myserver1 - #{stats.trace_id} - BarService#find_bars - 43B/1302B - 1.62s - #{::Time.now.iso8601}"
         end
       end
     end
@@ -32,7 +30,7 @@ describe ::Protobuf::Rpc::Stat do
         stats.client = 'myserver1'
         stats.dispatcher = double('dispatcher', :service => BarService.new(:find_bars))
         stats.request_size = 43
-        stats.to_s.should eq "[SRV] - myserver1 - #{stats.trace_id} - BarService#find_bars - 43B/-"
+        expect(stats.to_s).to eq "[SRV] - myserver1 - #{stats.trace_id} - BarService#find_bars - 43B/-"
       end
     end
   end
@@ -49,7 +47,7 @@ describe ::Protobuf::Rpc::Stat do
 
         ::Timecop.freeze(0.832.seconds.from_now) do
           stats.stop
-          stats.to_s.should eq "[CLT] - myserver1.myhost.com:30000 - #{stats.trace_id} - Foo::BarService#find_bars - 37B/12345B - 0.832s - #{::Time.now.iso8601}"
+          expect(stats.to_s).to eq "[CLT] - myserver1.myhost.com:30000 - #{stats.trace_id} - Foo::BarService#find_bars - 37B/12345B - 0.832s - #{::Time.now.iso8601}"
         end
 
       end
@@ -62,7 +60,7 @@ describe ::Protobuf::Rpc::Stat do
         stats.service = 'Foo::BarService'
         stats.method_name = 'find_bars'
         stats.request_size = 37
-        stats.to_s.should eq "[CLT] - myserver1.myhost.com:30000 - #{stats.trace_id} - Foo::BarService#find_bars - 37B/-"
+        expect(stats.to_s).to eq "[CLT] - myserver1.myhost.com:30000 - #{stats.trace_id} - Foo::BarService#find_bars - 37B/-"
       end
     end
   end

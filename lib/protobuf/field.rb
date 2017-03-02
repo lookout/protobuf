@@ -38,11 +38,11 @@ module Protobuf
       :sfixed64 => ::Protobuf::Field::Sfixed64Field,
       :string   => ::Protobuf::Field::StringField,
       :bytes    => ::Protobuf::Field::BytesField,
-      :bool     => ::Protobuf::Field::BoolField
+      :bool     => ::Protobuf::Field::BoolField,
     }.freeze
 
-    def self.build(message_class, rule, type, name, tag, options = {})
-      field_class(type).new(message_class, rule, field_type(type), name, tag, options)
+    def self.build(message_class, rule, type, name, tag, simple_name, options = {})
+      field_class(type).new(message_class, rule, field_type(type), name, tag, simple_name, options)
     end
 
     # Returns the field class for primitives,
@@ -59,7 +59,7 @@ module Protobuf
       elsif type < ::Protobuf::Field::BaseField
         type
       else
-        raise ArgumentError, "Invalid field type #{type}"
+        fail ArgumentError, "Invalid field type #{type}"
       end
     end
 
