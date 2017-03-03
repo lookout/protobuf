@@ -6,7 +6,7 @@ RSpec.describe Protobuf::Rpc::Middleware::RequestDecoder do
   let(:env) do
     Protobuf::Rpc::Env.new(
       'encoded_request' => encoded_request,
-      'log_signature' => 'log_signature',
+      'log_signature' => 'log_signature'
     )
   end
   let(:encoded_request) { request_wrapper.encode }
@@ -14,11 +14,11 @@ RSpec.describe Protobuf::Rpc::Middleware::RequestDecoder do
   let(:request) { request_type.new(:name => 'required') }
   let(:request_type) { rpc_method.request_type }
   let(:request_wrapper) do
-    Protobuf::Socketrpc::Request.new(
+    ::Protobuf::Socketrpc::Request.new(
       :caller => client_host,
       :service_name => service_name,
       :method_name => method_name.to_s,
-      :request_proto => request,
+      :request_proto => request
     )
   end
   let(:response_type) { rpc_method.response_type }
@@ -75,7 +75,7 @@ RSpec.describe Protobuf::Rpc::Middleware::RequestDecoder do
     end
 
     context "when decoding fails" do
-      before { allow(Protobuf::Socketrpc::Request).to receive(:decode).and_raise(RuntimeError) }
+      before { allow(::Protobuf::Socketrpc::Request).to receive(:decode).and_raise(RuntimeError) }
 
       it "raises a bad request data exception" do
         expect { subject.call(env) }.to raise_exception(Protobuf::Rpc::BadRequestData)
@@ -84,11 +84,11 @@ RSpec.describe Protobuf::Rpc::Middleware::RequestDecoder do
 
     context "when the RPC service is not defined" do
       let(:request_wrapper) do
-        Protobuf::Socketrpc::Request.new(
+        ::Protobuf::Socketrpc::Request.new(
           :caller => client_host,
           :service_name => 'Foo',
           :method_name => method_name.to_s,
-          :request_proto => request,
+          :request_proto => request
         )
       end
 
@@ -99,11 +99,11 @@ RSpec.describe Protobuf::Rpc::Middleware::RequestDecoder do
 
     context "when RPC method is not defined" do
       let(:request_wrapper) do
-        Protobuf::Socketrpc::Request.new(
+        ::Protobuf::Socketrpc::Request.new(
           :caller => client_host,
           :service_name => service_name,
           :method_name => 'foo',
-          :request_proto => request,
+          :request_proto => request
         )
       end
 

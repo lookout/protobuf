@@ -19,7 +19,7 @@ module Protobuf
         :timeout                 => nil,         # The timeout for the request, also handled by client.rb
         :client_host             => nil,         # The hostname or address of this client
         :first_alive_load_balance => false,      # Do we want to use check_avail frames before request
-      }
+      }.freeze
 
       class Base
         include Protobuf::Logging
@@ -63,7 +63,7 @@ module Protobuf
         # @param [String] message The error message
         def failure(code, message)
           @error = ClientError.new
-          @error.code = Protobuf::Socketrpc::ErrorReason.fetch(code)
+          @error.code = ::Protobuf::Socketrpc::ErrorReason.fetch(code)
           @error.message = message
           logger.debug { sign_message("Server failed request (invoking on_failure): #{@error.inspect}") }
 
@@ -104,7 +104,7 @@ module Protobuf
 
           # Parse out the raw response
           @stats.response_size = @response_data.size unless @response_data.nil?
-          response_wrapper = Protobuf::Socketrpc::Response.decode(@response_data)
+          response_wrapper = ::Protobuf::Socketrpc::Response.decode(@response_data)
 
           # Determine success or failure based on parsed data
           if response_wrapper.field?(:error_reason)

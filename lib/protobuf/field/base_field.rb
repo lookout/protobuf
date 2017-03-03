@@ -1,3 +1,4 @@
+require 'active_support/core_ext/hash/slice'
 require 'protobuf/field/field_array'
 module Protobuf
   module Field
@@ -39,7 +40,12 @@ module Protobuf
         @rule          = rule
         @tag           = tag
         @type_class    = type_class
-        @options       = options
+        # Populate the option hash with all the original default field options, for backwards compatibility.
+        # However, both default and custom options should ideally be accessed through the Optionable .{get,get!}_option functions.
+        @options = options.slice(:ctype, :packed, :deprecated, :lazy, :jstype, :weak, :uninterpreted_option, :default, :extension)
+        options.each do |option_name, value|
+          set_option(option_name, value)
+        end
 
         validate_packed_field if packed?
         define_accessor(simple_name, fully_qualified_name) if simple_name
@@ -92,10 +98,6 @@ module Protobuf
         false
       end
 
-      def getter
-        name
-      end
-
       def message?
         false
       end
@@ -129,16 +131,12 @@ module Protobuf
         stream = StringIO.new(bytes)
 
         if wire_type == ::Protobuf::WireType::VARINT
-          array << Varint.decode(stream) until stream.eof?
+          array << decode(Varint.decode(stream)) until stream.eof?
         elsif wire_type == ::Protobuf::WireType::FIXED64
-          array << stream.read(8) until stream.eof?
+          array << decode(stream.read(8)) until stream.eof?
         elsif wire_type == ::Protobuf::WireType::FIXED32
-          array << stream.read(4) until stream.eof?
+          array << decode(stream.read(4)) until stream.eof?
         end
-      end
-
-      def setter
-        @setter ||= "#{name}="
       end
 
       def tag_encoded
@@ -205,7 +203,6 @@ module Protobuf
           fail "Can't use packed encoding for '#{type_class}' type"
         end
       end
-
     end
   end
 end

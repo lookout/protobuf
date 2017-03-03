@@ -5,7 +5,7 @@ RSpec.describe Protobuf::Rpc::Connectors::Socket do
   subject { described_class.new({}) }
 
   it_behaves_like "a Protobuf Connector"
-  specify{ subject.respond_to?(:post_init, true).should be true }
+  specify { subject.respond_to?(:post_init, true).should be true }
 
   context "#read_response" do
     let(:data) { "New data" }

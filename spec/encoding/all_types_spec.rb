@@ -93,7 +93,7 @@ RSpec.describe ::Protobuf do
       :default_foreign_enum => ::Protobuf_unittest::ForeignEnum::FOREIGN_FOO,
       :default_import_enum => ::Protobuf_unittest_import::ImportEnum::IMPORT_FOO,
       :default_string_piece => "424",
-      :default_cord => "425",
+      :default_cord => "425"
     )
 
     data_file_path = PROTOS_PATH.join('all_types.data.bin')

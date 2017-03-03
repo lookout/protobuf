@@ -1,5 +1,9 @@
 # Stable (3.x)
 
+4.0.0
+-----------
+- Merge in ruby-protobuf/protobuf
+
 Upstream 3.7.0 (pre2)
 -----------
 - BUG: Track if a repeated field has been deliberately set (#325)

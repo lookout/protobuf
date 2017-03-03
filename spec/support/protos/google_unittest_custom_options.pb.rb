@@ -24,6 +24,8 @@ module Protobuf_unittest
   end
 
   class AggregateEnum < ::Protobuf::Enum
+    set_option :".protobuf_unittest.enumopt", { :s => "EnumAnnotation" }
+
     define :VALUE, 1
   end
 
@@ -33,6 +35,8 @@ module Protobuf_unittest
   #
   class TestMessageWithCustomOptions < ::Protobuf::Message
     class AnEnum < ::Protobuf::Enum
+      set_option :".protobuf_unittest.enum_opt1", -789
+
       define :ANENUM_VAL1, 1
       define :ANENUM_VAL2, 2
     end
@@ -71,6 +75,8 @@ module Protobuf_unittest
   class AggregateMessage < ::Protobuf::Message; end
   class NestedOptionType < ::Protobuf::Message
     class NestedEnum < ::Protobuf::Enum
+      set_option :".protobuf_unittest.enum_opt1", 1003
+
       define :NESTED_ENUM_VALUE, 1
     end
 
@@ -97,10 +103,20 @@ module Protobuf_unittest
 
 
   ##
+  # File Options
+  #
+  set_option :cc_generic_services, true
+  set_option :java_generic_services, true
+  set_option :py_generic_services, true
+  set_option :".protobuf_unittest.file_opt1", 9876543210
+  set_option :".protobuf_unittest.fileopt", { :i => 100, :s => "FileAnnotation", :sub => { :s => "NestedFileAnnotation" }, :file => { :".protobuf_unittest.fileopt" => { :s => "FileExtensionAnnotation" } }, :mset => { :".protobuf_unittest.AggregateMessageSetElement.message_set_extension" => { :s => "EmbeddedMessageSetElement" } } }
+
+
+  ##
   # Message Fields
   #
   class TestMessageWithCustomOptions
-    optional :string, :field1, 1
+    optional :string, :field1, 1, :ctype => ::Google::Protobuf::FieldOptions::CType::CORD, :".protobuf_unittest.field_opt1" => 8765432109
   end
 
   class ComplexOptionType1
@@ -152,12 +168,12 @@ module Protobuf_unittest
   end
 
   class AggregateMessage
-    optional :int32, :fieldname, 1
+    optional :int32, :fieldname, 1, :".protobuf_unittest.fieldopt" => { :s => "FieldAnnotation" }
   end
 
   class NestedOptionType
     class NestedMessage
-      optional :int32, :nested_field, 1
+      optional :int32, :nested_field, 1, :".protobuf_unittest.field_opt1" => 1002
     end
 
   end
@@ -178,7 +194,7 @@ module Protobuf_unittest
     optional :uint64, :".protobuf_unittest.file_opt1", 7736974, :extension => true
     optional ::Protobuf_unittest::Aggregate, :".protobuf_unittest.fileopt", 15478479, :extension => true
     optional ::Protobuf_unittest::Aggregate, :".protobuf_unittest.Aggregate.nested", 15476903, :extension => true
-    optional :int32, :".protobuf_unittest.NestedOptionType.nested_extension", 7912573, :extension => true
+    optional :int32, :".protobuf_unittest.NestedOptionType.nested_extension", 7912573, :extension => true, :".protobuf_unittest.field_opt2" => 1005
   end
 
   class ::Google::Protobuf::MessageOptions < ::Protobuf::Message

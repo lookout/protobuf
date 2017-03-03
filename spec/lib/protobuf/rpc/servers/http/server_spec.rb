@@ -17,8 +17,9 @@ module ReverseModule
     rpc :reverse, ReverseRequest, ReverseResponse
     def reverse
       respond_with :reversed => request.input.reverse,
-                   :some_reversed_header => env.parent_env.has_key?('X-SOME-HEADER') ?
-                                            env.parent_env['X-SOME-HEADER'].reverse : nil
+                   :some_reversed_header => if env.parent_env.key?('X-SOME-HEADER')
+                                              env.parent_env['X-SOME-HEADER'].reverse
+                                            end
     end
   end
 end
@@ -33,28 +34,30 @@ describe Protobuf::Rpc::Http::Server do
     end
 
     it 'should return the correct response for ReverseModule::ReverseService.reverse' do
-      response = client.post "/ReverseModule%3A%3AReverseService/reverse", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode()
+      response = client.post "/ReverseModule%3A%3AReverseService/reverse", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode
       expect(response.status).to eq 200
       expect(response.headers['content-type']).to eq "application/x-protobuf"
       expect(response.headers['x-protobuf-error']).to be_nil
       expect(response.headers['x-protobuf-error-reason']).to be_nil
-      expect(response.body).to eq ReverseModule::ReverseResponse.new(:reversed => "hello world".reverse).encode()
+      expect(response.body).to eq ReverseModule::ReverseResponse.new(:reversed => "hello world".reverse).encode
     end
 
     it 'should return the correct response for ReverseModule::ReverseService.reverse when some header is passed' do
       response = client.post "/ReverseModule%3A%3AReverseService/reverse",
-                             :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode(),
+                             :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode,
                              "X-SOME-HEADER" => "yes i am"
       expect(response.status).to eq 200
       expect(response.headers['content-type']).to eq "application/x-protobuf"
       expect(response.headers['x-protobuf-error']).to be_nil
       expect(response.headers['x-protobuf-error-reason']).to be_nil
-      expect(response.body).to eq ReverseModule::ReverseResponse.new(:reversed => "hello world".reverse,
-                                                                 :some_reversed_header => "yes i am".reverse).encode()
+      expect(response.body).to eq ReverseModule::ReverseResponse.new(
+        :reversed             => "hello world".reverse,
+        :some_reversed_header => "yes i am".reverse
+      ).encode
     end
 
     it 'should return METHOD_NOT_FOUND for ReverseModule::ReverseService.bobloblaw' do
-      response = client.post "/ReverseModule%3A%3AReverseService/bobloblaw", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode()
+      response = client.post "/ReverseModule%3A%3AReverseService/bobloblaw", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode
       expect(response.status).to eq 404
       expect(response.headers['content-type']).to eq "application/x-protobuf"
       expect(response.headers['x-protobuf-error']).to eq "ReverseModule::ReverseService#bobloblaw is not a defined RPC method."
@@ -63,7 +66,7 @@ describe Protobuf::Rpc::Http::Server do
     end
 
     it 'should return SERVICE_NOT_FOUND for Bar::ReverseService.reverse' do
-      response = client.post "/Bar%3A%3AReverseService/reverse", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode()
+      response = client.post "/Bar%3A%3AReverseService/reverse", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode
       expect(response.status).to eq 404
       expect(response.headers['content-type']).to eq "application/x-protobuf"
       expect(response.headers['x-protobuf-error']).to eq "Service class Bar::ReverseService is not defined."
@@ -88,7 +91,7 @@ describe Protobuf::Rpc::Http::Server do
     end
 
     it 'should return INVALID_REQUEST_PROTO for invalid URL' do
-      response = client.post "/foo", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode()
+      response = client.post "/foo", :input => ReverseModule::ReverseRequest.new(:input => "hello world").encode
       expect(response.status).to eq 400
       expect(response.headers['content-type']).to eq "application/x-protobuf"
       expect(response.headers['x-protobuf-error']).to eq "Expected path format /CLASS/METHOD"

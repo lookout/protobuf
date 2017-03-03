@@ -99,7 +99,7 @@ RSpec.describe ::Protobuf::Rpc::Stat do
 
     context "when statsd_client hasn't been set" do
       it "should not raise" do
-        expect{ stop }.not_to raise_error
+        expect { stop }.not_to raise_error
       end
     end
 

@@ -8,7 +8,7 @@ require "protobuf/version"
   s.date          = ::Time.now.strftime('%Y-%m-%d')
   s.license       = 'MIT'
 
-  s.authors       = ['BJ Neilsen', 'Brandon Dewitt', 'Devin Christensen', 'Adam Hutchison', 'R. Tyler Croy',]
+  s.authors       = ['BJ Neilsen', 'Brandon Dewitt', 'Devin Christensen', 'Adam Hutchison', 'R. Tyler Croy']
   s.email         = ['bj.neilsen+protobuf@gmail.com', 'brandonsdewitt+protobuf@gmail.com', 'quixoten@gmail.com', 'liveh2o@gmail.com', 'tyler@monkeypox.org']
   s.homepage      = 'https://github.com/lookout/protobuffy'
   s.summary       = "Google Protocol Buffers serialization and RPC implementation for Ruby."
@@ -31,7 +31,7 @@ require "protobuf/version"
   s.add_development_dependency 'rack', '~> 1.0'
   s.add_development_dependency 'faraday'
   s.add_development_dependency 'rspec', '>= 3.0'
-  s.add_development_dependency "rubocop", "~> 0.35.0"
+  s.add_development_dependency "rubocop", "~> 0.38.0"
   s.add_development_dependency "parser", "2.3.0.6" # Locked this down since 2.3.0.7 causes issues. https://github.com/bbatsov/rubocop/pull/2984
   s.add_development_dependency 'simplecov'
   s.add_development_dependency 'timecop'

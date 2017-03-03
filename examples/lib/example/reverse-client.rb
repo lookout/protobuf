@@ -6,11 +6,11 @@ require_relative "reverse.pb.rb"
 
 configuration = {
   :host => "localhost",
-  :port => 9399
+  :port => 9399,
 }
 
 request = {
-  :input => (ARGV[0] or 'hello world')
+  :input => (ARGV[0] || 'hello world'),
 }
 
 Example::ReverseService.client(configuration).reverse(Example::ReverseRequest.new(request)) do |client|

@@ -36,18 +36,18 @@ module Protobuf
         ".#{type_namespace.join('.')}"
       end
 
-      def run_once(label, &block)
+      def run_once(label)
         tracker_ivar = "@_#{label}_compiled"
         value_ivar = "@_#{label}_compiled_value"
 
         if instance_variable_get(tracker_ivar)
           return instance_variable_get(value_ivar)
-        else
-          return_value = block.call
-          instance_variable_set(tracker_ivar, true)
-          instance_variable_set(value_ivar, return_value)
-          return return_value
         end
+
+        return_value = yield
+        instance_variable_set(tracker_ivar, true)
+        instance_variable_set(value_ivar, return_value)
+        return_value
       end
 
       def to_s
@@ -59,6 +59,27 @@ module Protobuf
         @type_namespace ||= @namespace + [descriptor.name]
       end
 
+      def serialize_value(value)
+        case value
+        when Message
+          fields = value.each_field.map do |field, inner_value|
+            next unless value.field?(field.name)
+            serialized_inner_value = serialize_value(inner_value)
+            "#{field.fully_qualified_name.inspect} => #{serialized_inner_value}"
+          end.compact
+          "{ #{fields.join(', ')} }"
+        when Enum
+          "::#{value.parent_class}::#{value.name}"
+        when String
+          value.inspect
+        when nil
+          "nil"
+        when Array
+          '[' + value.map { |x| serialize_value(x) }.join(', ') + ']'
+        else
+          value
+        end
+      end
     end
   end
 end

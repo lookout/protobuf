@@ -1,12 +1,33 @@
 syntax = "proto2";
 
+import "google/protobuf/descriptor.proto";
+
 package test;
 
+option cc_generic_services = true;
+option (file_option) = 9876543210;
+
+extend google.protobuf.FileOptions {
+  optional uint64 file_option = 9585869;
+}
+
+extend google.protobuf.FieldOptions {
+  optional uint64 field_option = 858769;
+}
+
+extend google.protobuf.EnumOptions {
+  optional int64 enum_option = 590284;
+}
+
 enum StatusType {
+  option allow_alias = true;
+  option (enum_option) = -789;
+
   PENDING = 0;
   ENABLED = 1;
   DISABLED = 2;
   DELETED = 3;
+  ALIASED = 3;
 }
 
 message ResourceFindRequest {
@@ -23,7 +44,7 @@ message ResourceSleepRequest {
 message Resource {
   extensions 100 to max;
 
-  required string name = 1;
+  required string name = 1 [(field_option) = 8765432109, ctype = CORD];
   optional int64 date_created = 2;
   optional StatusType status = 3;
   repeated StatusType repeated_enum = 4;

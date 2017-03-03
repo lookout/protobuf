@@ -40,19 +40,19 @@ module Protobuf
     end
 
     class UnauthorizedRequest < PbError
-      def initialize message='The request requires user authentication'
+      def initialize(message = 'The request requires user authentication')
         super message, 'UNAUTHORIZED_REQUEST'
       end
     end
 
     class ForbiddenRequest < PbError
-      def initialize message='User authentificated but does not have permissions'
+      def initialize(message = 'User authentificated but does not have permissions')
         super message, 'FORBIDDEN_REQUEST'
       end
     end
 
     class DataNotFound < PbError
-      def initialize message='Requested data not found'
+      def initialize(message = 'Requested data not found')
         super message, 'DATA_NOT_FOUND'
       end
     end

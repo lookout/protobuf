@@ -32,6 +32,7 @@ namespace :compile do
   task :rpc do
     proto_path = ::File.expand_path('../proto', __FILE__)
     proto_files = Dir[File.join(proto_path, '**', '*.proto')]
+    puts "\n\n #{proto_files} \n\n"
     output_dir = ::File.expand_path('../tmp/rpc', __FILE__)
     ::FileUtils.mkdir_p(output_dir)
 

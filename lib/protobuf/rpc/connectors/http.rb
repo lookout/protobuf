@@ -22,12 +22,12 @@ module Protobuf
         # private
 
         def close_connection
-          logger.debug { sign_message('Connector closed')  }
+          logger.debug { sign_message('Connector closed') }
         end
 
         # Method to determine error state, must be used with Connector api
         def error?
-          logger.debug { sign_message("Error state : #{@error}")  }
+          logger.debug { sign_message("Error state : #{@error}") }
           if @error
             true
           else
@@ -40,7 +40,7 @@ module Protobuf
         end
 
         def base
-          options[:base] or ''
+          options[:base] || ''
         end
 
         def client
@@ -58,19 +58,19 @@ module Protobuf
 
           http_response = client.post do |http_request|
             path_components = [''] + rpc_request[:service_name].split('::') + [rpc_request[:method_name]]
-            http_request.url base + path_components.map{ |x| CGI::escape(x) }.join('/')
+            http_request.url base + path_components.map { |x| CGI.escape(x) }.join('/')
             http_request.headers['Content-Type'] = 'application/x-protobuf'
             http_request.headers['X-Protobuf-Caller'] = rpc_request[:caller] || ''
             http_request.body = rpc_request[:request_proto]
           end
 
           # Server returns protobuf response with no error
-          if http_response.status == 200 and http_response.headers['x-protobuf-error'].nil?
+          if http_response.status == 200 && http_response.headers['x-protobuf-error'].nil?
             rpc_response = Protobuf::Socketrpc::Response.new(
               :response_proto => http_response.body
             )
           # Server returns protobuf error
-          elsif http_response.status != 200 and not http_response.headers['x-protobuf-error'].nil?
+          elsif http_response.status != 200 && http_response.headers['x-protobuf-error']
             rpc_response = Protobuf::Socketrpc::Response.new(
               :response_proto => http_response.body,
               :error => http_response.headers['x-protobuf-error'],
@@ -85,7 +85,7 @@ module Protobuf
             )
           end
 
-          @response_data = rpc_response.encode()
+          @response_data = rpc_response.encode
 
           parse_response
         end

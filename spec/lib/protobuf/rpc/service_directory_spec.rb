@@ -11,7 +11,7 @@ RSpec.describe ::Protobuf::Rpc::ServiceDirectory do
       :address => '127.0.0.1',
       :port => '1111',
       :ttl => 10,
-      :services => %w(EchoService),
+      :services => %w(EchoService)
     )
   end
 
@@ -21,7 +21,7 @@ RSpec.describe ::Protobuf::Rpc::ServiceDirectory do
       :address => '127.0.0.1',
       :port => "1112",
       :ttl => 10,
-      :services => %w(HelloService),
+      :services => %w(HelloService)
     )
   end
 
@@ -31,7 +31,7 @@ RSpec.describe ::Protobuf::Rpc::ServiceDirectory do
       :address => '127.0.0.1',
       :port => '1113',
       :ttl => 1,
-      :services => %w(HelloService),
+      :services => %w(HelloService)
     )
   end
 
@@ -41,7 +41,7 @@ RSpec.describe ::Protobuf::Rpc::ServiceDirectory do
       :address => '127.0.0.1',
       :port => '1114',
       :ttl => 10,
-      :services => %w(HelloService EchoService),
+      :services => %w(HelloService EchoService)
     )
   end
 
@@ -64,7 +64,7 @@ RSpec.describe ::Protobuf::Rpc::ServiceDirectory do
     type = type.to_s.upcase
     beacon = ::Protobuf::Rpc::DynamicDiscovery::Beacon.new(
       :server => server,
-      :beacon_type => ::Protobuf::Rpc::DynamicDiscovery::BeaconType.fetch(type),
+      :beacon_type => ::Protobuf::Rpc::DynamicDiscovery::BeaconType.fetch(type)
     )
 
     @socket.send(beacon.encode, 0, @address, @port)
@@ -265,7 +265,7 @@ RSpec.describe ::Protobuf::Rpc::ServiceDirectory do
             :address => '127.0.0.1',
             :port => (5555 + x).to_s,
             :ttl => rand(1..5),
-            :services => 10.times.map { |y| "PerformanceService#{y}" },
+            :services => 10.times.map { |y| "PerformanceService#{y}" }
           )
         end
       end

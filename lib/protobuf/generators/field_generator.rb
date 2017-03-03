@@ -7,9 +7,9 @@ module Protobuf
       ##
       # Constants
       #
-      PROTO_INFINITY_DEFAULT          = /^inf$/i.freeze
-      PROTO_NEGATIVE_INFINITY_DEFAULT = /^-inf$/i.freeze
-      PROTO_NAN_DEFAULT               = /^nan$/i.freeze
+      PROTO_INFINITY_DEFAULT          = /^inf$/i
+      PROTO_NEGATIVE_INFINITY_DEFAULT = /^-inf$/i
+      PROTO_NAN_DEFAULT               = /^nan$/i
       RUBY_INFINITY_DEFAULT           = '::Float::INFINITY'.freeze
       RUBY_NEGATIVE_INFINITY_DEFAULT  = '-::Float::INFINITY'.freeze
       RUBY_NAN_DEFAULT                = '::Float::NAN'.freeze
@@ -84,6 +84,13 @@ module Protobuf
                              opts[:packed] = 'true' if packed?
                              opts[:deprecated] = 'true' if deprecated?
                              opts[:extension] = 'true' if extension?
+                             if descriptor.options
+                               descriptor.options.each_field do |field_option|
+                                 next unless descriptor.options.field?(field_option.name)
+                                 option_value = descriptor.options[field_option.name]
+                                 opts[field_option.fully_qualified_name] = serialize_value(option_value)
+                               end
+                             end
                              opts
                            end
       end

@@ -9,7 +9,7 @@ module Protobuf
           yield(*args)
         end
       end
-      alias_method :on, :register
+      alias :on register
 
       def trigger(event_name, *args)
         event_name = normalized_event_name(event_name)
@@ -22,7 +22,7 @@ module Protobuf
       ::Protobuf.deprecator.deprecate_methods(
         self,
         :register => "#{replacement}.#{replacement.method(:subscribe).name}".to_sym,
-        :trigger => "#{replacement}.#{replacement.method(:instrument).name}".to_sym,
+        :trigger => "#{replacement}.#{replacement.method(:instrument).name}".to_sym
       )
 
       def normalized_event_name(event_name)

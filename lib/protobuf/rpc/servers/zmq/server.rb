@@ -16,7 +16,7 @@ module Protobuf
           :broadcast_beacons => false,
           :broadcast_busy => false,
           :zmq_inproc => true,
-        }
+        }.freeze
 
         attr_accessor :options, :workers
         attr_reader :zmq_context
@@ -64,7 +64,7 @@ module Protobuf
         def beacon_port
           @beacon_port ||= options.fetch(
             :beacon_port,
-            ::Protobuf::Rpc::ServiceDirectory.port,
+            ::Protobuf::Rpc::ServiceDirectory.port
           ).to_i
         end
 
@@ -83,7 +83,7 @@ module Protobuf
         def broadcast_flatline
           flatline = ::Protobuf::Rpc::DynamicDiscovery::Beacon.new(
             :beacon_type => ::Protobuf::Rpc::DynamicDiscovery::BeaconType::FLATLINE,
-            :server => to_proto,
+            :server => to_proto
           )
 
           @beacon_socket.send(flatline.encode, 0)
@@ -94,7 +94,7 @@ module Protobuf
 
           heartbeat = ::Protobuf::Rpc::DynamicDiscovery::Beacon.new(
             :beacon_type => ::Protobuf::Rpc::DynamicDiscovery::BeaconType::HEARTBEAT,
-            :server => to_proto,
+            :server => to_proto
           )
 
           @beacon_socket.send(heartbeat.encode, 0)
@@ -117,7 +117,7 @@ module Protobuf
         def frontend_ip
           @frontend_ip ||= resolve_ip(options[:host])
         end
-        alias_method :backend_ip, :frontend_ip
+        alias :backend_ip frontend_ip
 
         def frontend_port
           options[:port]
@@ -217,11 +217,12 @@ module Protobuf
         end
 
         def timeout
-          if @timeout.nil?
-            @timeout = 0
-          else
-            @timeout = [minimum_timeout, maintenance_timeout].max
-          end
+          @timeout =
+            if @timeout.nil?
+              0
+            else
+              [minimum_timeout, maintenance_timeout].max
+            end
         end
 
         def total_workers
@@ -234,7 +235,7 @@ module Protobuf
             :address => frontend_ip,
             :port => frontend_port.to_s,
             :ttl => (beacon_interval * 1.5).ceil,
-            :services => ::Protobuf::Rpc::Service.implemented_services,
+            :services => ::Protobuf::Rpc::Service.implemented_services
           )
         end
 

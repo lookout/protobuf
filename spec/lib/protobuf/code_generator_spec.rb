@@ -48,7 +48,7 @@ RSpec.describe ::Protobuf::CodeGenerator do
           :label => Google::Protobuf::FieldDescriptorProto::Label::LABEL_OPTIONAL,
           :type => Google::Protobuf::FieldDescriptorProto::Type::TYPE_STRING,
           :extendee => '.google.protobuf.FieldOptions',
-        }],
+        }]
       )
     end
     let(:request_bytes) { COMPILER::CodeGeneratorRequest.encode(:proto_file => [input_file]) }
@@ -72,7 +72,7 @@ RSpec.describe ::Protobuf::CodeGenerator do
           described_class.fatal("something is wrong")
         end.to raise_error(
           ::Protobuf::CodeGenerator::CodeGeneratorFatalError,
-          "something is wrong",
+          "something is wrong"
         )
       end
     end

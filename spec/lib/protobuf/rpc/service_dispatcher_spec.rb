@@ -8,7 +8,7 @@ RSpec.describe Protobuf::Rpc::ServiceDispatcher do
       'method_name' => method_name,
       'request' => request,
       'rpc_service' => service_class,
-      'service_name' => service_name,
+      'service_name' => service_name
     )
   end
   let(:method_name) { :find }

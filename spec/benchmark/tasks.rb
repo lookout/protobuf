@@ -2,7 +2,6 @@ require 'benchmark'
 require 'protobuf'
 require 'protobuf/socket'
 require 'support/all'
-require 'support/test/resource_service'
 require 'spec_helper'
 require SUPPORT_PATH.join('resource_service')
 

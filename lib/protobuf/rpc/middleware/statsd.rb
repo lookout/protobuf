@@ -25,8 +25,6 @@ module Protobuf
         def statsd_base_path(env)
           if env.service_name && env.method_name
             "rpc-server.#{env.service_name}.#{env.method_name}".gsub('::', '.').downcase
-          else
-            nil
           end
         end
 

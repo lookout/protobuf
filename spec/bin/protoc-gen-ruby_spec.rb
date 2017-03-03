@@ -7,7 +7,7 @@ RSpec.describe 'protoc-gen-ruby' do
   let(:package) { 'test' }
   let(:request_bytes) do
     ::Google::Protobuf::Compiler::CodeGeneratorRequest.encode(
-      :proto_file => [{ :package => package }],
+      :proto_file => [{ :package => package }]
     )
   end
 

@@ -108,7 +108,7 @@ RSpec.describe Protobuf::Rpc::Connectors::Base do
         :service_name => service.name,
         :method_name => 'find',
         :request_proto => '',
-        :caller => client_host,
+        :caller => client_host
       )
     end
 
@@ -160,7 +160,7 @@ RSpec.describe Protobuf::Rpc::Connectors::Base do
   end
 
   shared_examples "a ConnectorDisposition" do |meth, stats_meth, cb, *args|
-    let(:stats) { double("Object", stop: true, success: true, failure: true) }
+    let(:stats) { double("Object", :stop => true, :success => true, :failure => true) }
     before { subject.stats = stats }
 
     it "calls #complete before exit" do

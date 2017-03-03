@@ -6,6 +6,12 @@
 require 'protobuf'
 require 'protobuf/rpc/service'
 
+
+##
+# Imports
+#
+require 'google/protobuf/descriptor.pb'
+
 module Test
   ::Protobuf::Optionable.inject(self) { ::Google::Protobuf::FileOptions }
 
@@ -13,10 +19,14 @@ module Test
   # Enum Classes
   #
   class StatusType < ::Protobuf::Enum
+    set_option :allow_alias, true
+    set_option :".test.enum_option", -789
+
     define :PENDING, 0
     define :ENABLED, 1
     define :DISABLED, 2
     define :DELETED, 3
+    define :ALIASED, 3
   end
 
 
@@ -48,6 +58,13 @@ module Test
 
 
   ##
+  # File Options
+  #
+  set_option :cc_generic_services, true
+  set_option :".test.file_option", 9876543210
+
+
+  ##
   # Message Fields
   #
   class ResourceFindRequest
@@ -62,7 +79,7 @@ module Test
   end
 
   class Resource
-    required :string, :name, 1
+    required :string, :name, 1, :ctype => ::Google::Protobuf::FieldOptions::CType::CORD, :".test.field_option" => 8765432109
     optional :int64, :date_created, 2
     optional ::Test::StatusType, :status, 3
     repeated ::Test::StatusType, :repeated_enum, 4
@@ -103,6 +120,22 @@ module Test
     extensions 100...111
     optional :string, :".test.foo", 100, :extension => true
     optional :int64, :".test.bar", 101, :extension => true
+  end
+
+
+  ##
+  # Extended Message Fields
+  #
+  class ::Google::Protobuf::FileOptions < ::Protobuf::Message
+    optional :uint64, :".test.file_option", 9585869, :extension => true
+  end
+
+  class ::Google::Protobuf::FieldOptions < ::Protobuf::Message
+    optional :uint64, :".test.field_option", 858769, :extension => true
+  end
+
+  class ::Google::Protobuf::EnumOptions < ::Protobuf::Message
+    optional :int64, :".test.enum_option", 590284, :extension => true
   end
 
 
