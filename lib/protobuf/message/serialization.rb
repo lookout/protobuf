@@ -8,12 +8,16 @@ module Protobuf
 
       module ClassMethods
         def decode(bytes)
-          self.new.decode(bytes)
+          new.decode(bytes)
+        end
+
+        def decode_from(stream)
+          new.decode_from(stream)
         end
 
         # Create a new object with the given values and return the encoded bytes.
         def encode(fields = {})
-          self.new(fields).encode
+          new(fields).encode
         end
       end
 
@@ -44,8 +48,10 @@ module Protobuf
       # Encode this message
       #
       def encode
-        stream = ::StringIO.new.set_encoding(::Protobuf::Field::BytesField::BYTES_ENCODING)
-        encode_to(stream).string
+        stream = ::StringIO.new
+        stream.set_encoding(::Protobuf::Field::BytesField::BYTES_ENCODING)
+        encode_to(stream)
+        stream.string
       end
 
       # Encode this message to the given stream.
@@ -57,21 +63,17 @@ module Protobuf
       ##
       # Instance Aliases
       #
-      alias_method :parse_from_string, :decode
-      alias_method :deserialize, :decode
-      alias_method :parse_from, :decode_from
-      alias_method :deserialize_from, :decode_from
-      alias_method :to_s, :encode
-      alias_method :bytes, :encode
-      alias_method :serialize, :encode
-      alias_method :serialize_to_string, :encode
-      alias_method :serialize_to, :encode_to
+      alias :parse_from_string decode
+      alias :deserialize decode
+      alias :parse_from decode_from
+      alias :deserialize_from decode_from
+      alias :to_s encode
+      alias :bytes encode
+      alias :serialize encode
+      alias :serialize_to_string encode
+      alias :serialize_to encode_to
 
       private
-
-      def field_must_be_serialized?(field)
-        field.required? || ! @values[field.name].nil?
-      end
 
       def set_field_bytes(tag, bytes)
         field = self.class.get_field(tag, true)
@@ -81,4 +83,3 @@ module Protobuf
     end
   end
 end
-

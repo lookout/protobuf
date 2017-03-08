@@ -1,11 +1,14 @@
+# encoding: utf-8
+
 ##
 # This file is auto-generated. DO NOT EDIT!
 #
-require 'protobuf/message'
+require 'protobuf'
 
 module Protobuf
   module Rpc
     module DynamicDiscovery
+      ::Protobuf::Optionable.inject(self) { ::Google::Protobuf::FileOptions }
 
       ##
       # Enum Classes

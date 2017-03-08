@@ -19,3 +19,4 @@ ext/ruby_generator/protoc-ruby
 .ruby-version
 ext/ruby_generator/gdb.run
 ext/ruby_generator/protoc-ruby.dSYM
+.byebug_history

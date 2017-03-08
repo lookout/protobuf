@@ -4,27 +4,28 @@ module Protobuf
   module Rpc
     module Zmq
 
-      ADDRESS_MATCH = /\A\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\z/.freeze
-      WORKER_READY_MESSAGE = "\1"
-      CHECK_AVAILABLE_MESSAGE = "\3"
-      NO_WORKERS_AVAILABLE = "\4"
-      WORKERS_AVAILABLE = "\5"
+      ADDRESS_MATCH = /\A\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\z/
+      WORKER_READY_MESSAGE = "\1".freeze
+      CHECK_AVAILABLE_MESSAGE = "\3".freeze
+      NO_WORKERS_AVAILABLE = "\4".freeze
+      WORKERS_AVAILABLE = "\5".freeze
+      EMPTY_STRING = "".freeze
 
       module Util
-        include ::Protobuf::Logger::LogMethods
+        include ::Protobuf::Logging
 
         def self.included(base)
           base.extend(::Protobuf::Rpc::Zmq::Util)
         end
 
         def zmq_error_check(return_code, source = nil)
-          unless ::ZMQ::Util.resultcode_ok?(return_code)
-            raise <<-ERROR
-            Last ZMQ API call #{source ? "to #{source}" : ""} failed with "#{::ZMQ::Util.error_string}".
+          return if ::ZMQ::Util.resultcode_ok?(return_code)
 
-            #{caller(1).join($/)}
-            ERROR
-          end
+          fail <<-ERROR
+          Last ZMQ API call #{source ? "to #{source}" : ''} failed with "#{::ZMQ::Util.error_string}".
+
+          #{caller(1).join($INPUT_RECORD_SEPARATOR)}
+          ERROR
         end
 
         def log_signature
@@ -37,7 +38,7 @@ module Protobuf
         end
 
         def resolve_ip(hostname)
-          ::Resolv.getaddresses(hostname).detect do |address|
+          ::Resolv.getaddresses(hostname).find do |address|
             address =~ ADDRESS_MATCH
           end
         end

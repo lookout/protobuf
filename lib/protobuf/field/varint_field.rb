@@ -8,6 +8,7 @@ module Protobuf
       # Constants
       #
 
+      CACHE_LIMIT = 2048
       INT32_MAX  =  2**31 - 1
       INT32_MIN  = -2**31
       INT64_MAX  =  2**63 - 1
@@ -23,7 +24,16 @@ module Protobuf
         0
       end
 
-      def self.encode(value)
+      # Because all tags and enums are calculated as VarInt it is "most common" to have
+      # values < CACHE_LIMIT (low numbers) which is defaulting to 1024
+      def self.cached_varint(value)
+        @_varint_cache ||= {}
+        (@_varint_cache[value] ||= encode(value, false)).dup
+      end
+
+      def self.encode(value, use_cache = true)
+        return cached_varint(value) if use_cache && value >= 0 && value <= CACHE_LIMIT
+
         bytes = []
         until value < 128
           bytes << (0x80 | (value & 0x7f))
@@ -32,14 +42,30 @@ module Protobuf
         (bytes << value).pack('C*')
       end
 
+      # Load the cache of VarInts on load of file
+      (0..CACHE_LIMIT).each do |cached_value|
+        cached_varint(cached_value)
+      end
+
       ##
       # Public Instance Methods
       #
-
       def acceptable?(val)
-        (val > self.class.min || val < self.class.max)
+        int_val = if val.is_a?(Integer)
+                    return true if val >= 0 && val < INT32_MAX # return quickly for smallest integer size, hot code path
+                    val
+                  else
+                    coerce!(val)
+                  end
+
+        int_val >= self.class.min && int_val <= self.class.max
       rescue
         false
+      end
+
+      def coerce!(val)
+        return val.to_i if val.is_a?(Numeric)
+        Integer(val, 10)
       end
 
       def decode(value)
@@ -47,15 +73,7 @@ module Protobuf
       end
 
       def encode(value)
-        return [value].pack('C') if value < 128
-
-        bytes = []
-        until value == 0
-          bytes << (0x80 | (value & 0x7f))
-          value >>= 7
-        end
-        bytes[-1] &= 0x7f
-        bytes.pack('C*')
+        ::Protobuf::Field::VarintField.encode(value)
       end
 
       def wire_type
@@ -65,4 +83,3 @@ module Protobuf
     end
   end
 end
-

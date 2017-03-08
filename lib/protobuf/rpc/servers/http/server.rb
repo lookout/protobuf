@@ -8,7 +8,7 @@ module Protobuf
     module Http
       class Server
         include ::Protobuf::Rpc::Server
-        include ::Protobuf::Logger::LogMethods
+        include ::Protobuf::Logging
 
         # TODO: more comprehensive mapping?
         HTTP_STATUSES = {
@@ -24,8 +24,8 @@ module Protobuf
           Protobuf::Socketrpc::ErrorReason::INVALID_REQUEST_PROTO => 500,
           Protobuf::Socketrpc::ErrorReason::BAD_RESPONSE_PROTO => 500,
           Protobuf::Socketrpc::ErrorReason::UNKNOWN_HOST => 500,
-          Protobuf::Socketrpc::ErrorReason::IO_ERROR => 500
-        }
+          Protobuf::Socketrpc::ErrorReason::IO_ERROR => 500,
+        }.freeze
 
         def initialize(options = {})
           @options = options
@@ -36,11 +36,13 @@ module Protobuf
         end
 
         def call(env)
-          path_components = env['PATH_INFO'].split("/").map{ |x| CGI::unescape(x) }.compact.reject{ |x| x.empty? }
+          path_components = env['PATH_INFO'].split("/")
+                                            .map { |x| CGI.unescape(x) }
+                                            .compact.reject(&:empty?)
           if path_components.length < 2
             return protobuf_http_response 400,
-              :error => "Expected path format /CLASS/METHOD",
-              :reason => Protobuf::Socketrpc::ErrorReason::INVALID_REQUEST_PROTO
+                                          :error => "Expected path format /CLASS/METHOD",
+                                          :reason => Protobuf::Socketrpc::ErrorReason::INVALID_REQUEST_PROTO
           end
 
           service_name = path_components[0..-2].join("::")
@@ -53,26 +55,26 @@ module Protobuf
             :caller => env['HTTP_X_PROTOBUF_CALLER'] || ''
           )
 
-          encoded_request = rpc_request.encode()
+          encoded_request = rpc_request.encode
 
           begin
             encoded_response = handle_request(encoded_request, env)
-          rescue Exception => e
+          rescue StandardError => e
             return protobuf_http_response 500,
-              :error => "Handle request failed: #{e.to_s}",
-              :reason => Protobuf::Socketrpc::ErrorReason::RPC_ERROR
+                                          :error => "Handle request failed: #{e}",
+                                          :reason => Protobuf::Socketrpc::ErrorReason::RPC_ERROR
           end
 
           rpc_response = Protobuf::Socketrpc::Response.decode(encoded_response)
 
-          if rpc_response[:error].length > 0
-            status = HTTP_STATUSES[rpc_response[:error_reason]] or 500
+          if rpc_response[:error].present?
+            status = HTTP_STATUSES[rpc_response[:error_reason]] || 500
             return protobuf_http_response status,
-              :error => rpc_response[:error],
-              :reason => rpc_response[:error_reason]
+                                          :error => rpc_response[:error],
+                                          :reason => rpc_response[:error_reason]
           end
-          
-          return protobuf_http_response 200, :body => rpc_response['response_proto']
+
+          protobuf_http_response 200, :body => rpc_response['response_proto']
         end
 
         def protobuf_http_response(status, options)
@@ -93,7 +95,7 @@ module Protobuf
         end
 
         def running?
-          !!@running
+          !!@running # rubocop:disable Style/DoubleNegation
         end
 
         def stop

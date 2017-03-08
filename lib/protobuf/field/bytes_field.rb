@@ -8,7 +8,7 @@ module Protobuf
       # Constants
       #
 
-      BYTES_ENCODING = "ASCII-8BIT".freeze
+      BYTES_ENCODING = Encoding::BINARY
 
       ##
       # Class Methods
@@ -23,7 +23,7 @@ module Protobuf
       #
 
       def acceptable?(val)
-        val.nil? || val.is_a?(String) || val.is_a?(Symbol) || val.is_a?(::Protobuf::Message)
+        val.is_a?(String) || val.nil? || val.is_a?(Symbol) || val.is_a?(::Protobuf::Message)
       end
 
       def decode(bytes)
@@ -33,49 +33,35 @@ module Protobuf
       end
 
       def encode(value)
-        value_to_encode = value.dup
-        value_to_encode = value.encode if value.is_a?(::Protobuf::Message)
-        value_to_encode.force_encoding(::Protobuf::Field::BytesField::BYTES_ENCODING)
+        value_to_encode =
+          if value.is_a?(::Protobuf::Message)
+            value.encode
+          else
+            value.dup
+          end
 
+        value_to_encode.force_encoding(::Protobuf::Field::BytesField::BYTES_ENCODING)
         string_size = ::Protobuf::Field::VarintField.encode(value_to_encode.size)
-        string_size << value_to_encode
+
+        "#{string_size}#{value_to_encode}"
       end
 
       def wire_type
         ::Protobuf::WireType::LENGTH_DELIMITED
       end
 
-      private
-
-      ##
-      # Private Instance Methods
-      #
-
-      def define_setter
-        field = self
-        message_class.class_eval do
-          define_method(field.setter_method_name) do |val|
-            begin
-              field.warn_if_deprecated
-              val = "#{val}" if val.is_a?(Symbol)
-
-              if val.nil?
-                @values.delete(field.name)
-              elsif field.acceptable?(val)
-                @values[field.name] = val.dup
-              else
-                raise TypeError, "Unacceptable value #{val} for field #{field.name} of type #{field.type_class}"
-              end
-            rescue NoMethodError => ex
-              ::Protobuf::Logger.error { ex.message }
-              ::Protobuf::Logger.error { ex.backtrace.join("\n") }
-              raise TypeError, "Got NoMethodError attempting to set #{val} for field #{field.name} of type #{field.type_class}: #{ex.message}"
-            end
-          end
+      def coerce!(value)
+        case value
+        when String, Symbol
+          value.to_s
+        when NilClass
+          nil
+        when ::Protobuf::Message
+          value.dup
+        else
+          fail TypeError, "Unacceptable value #{value} for field #{name} of type #{type_class}"
         end
       end
-
     end
   end
 end
-

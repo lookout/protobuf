@@ -4,21 +4,23 @@ require 'faraday'
 
 describe ::Protobuf::Rpc::Connectors::Http do
   subject { described_class.new({}) }
-  
-  it_behaves_like "a Protobuf Connector"
 
-  specify{ described_class.include?(Protobuf::Rpc::Connectors::Common).should be_true }
+  it_behaves_like "a Protobuf Connector"
+  specify { subject.respond_to?(:post_init, true).should be true }
 
   let(:client_double) do
     Faraday.new do |builder|
       builder.adapter :test do |stub|
-        stub.post("/Foo/UserService/find") {[ 200, {}, "\n\n\n\x03foo\x12\x03bar" ]}
-        stub.post("/Foo/UserService/foo1") {[ 404, {
-          'x-protobuf-error' => "Foo::UserService#foo1 is not a defined RPC method.",
-          'x-protobuf-error-reason' => Protobuf::Socketrpc::ErrorReason::METHOD_NOT_FOUND.to_s
-        }, "" ]}
-        stub.post("/Foo/UserService/foo2") {[ 500, {}, "" ]}
-        stub.post("/base/Foo/UserService/foo3") {[ 200, {}, "\n\n\n\x03foo\x12\x03bar" ]}
+        stub.post("/Foo/UserService/find") { [200, {}, "\n\n\n\x03foo\x12\x03bar"] }
+        stub.post("/Foo/UserService/foo1") do
+          headers = {
+            'x-protobuf-error' => "Foo::UserService#foo1 is not a defined RPC method.",
+            'x-protobuf-error-reason' => Protobuf::Socketrpc::ErrorReason::METHOD_NOT_FOUND.to_s,
+          }
+          [404, headers, '']
+        end
+        stub.post("/Foo/UserService/foo2") { [500, {}, ""] }
+        stub.post("/base/Foo/UserService/foo3") { [200, {}, "\n\n\n\x03foo\x12\x03bar"] }
       end
     end
   end
@@ -51,7 +53,7 @@ describe ::Protobuf::Rpc::Connectors::Http do
     end
 
     it "prepends base path option correctly" do
-      subject.stub(:options) { { :base => "/base" }}
+      subject.stub(:options) { { :base => "/base" } }
       subject.stub(:request_bytes) { "\n\x10Foo::UserService\x12\x04foo3\x1A\r\n\vfoo@bar.com\"\rabcdefghijklm" }
       subject.send(:setup_connection)
       subject.send(:send_data)

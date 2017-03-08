@@ -1,7 +1,9 @@
+# encoding: utf-8
+
 ##
 # This file is auto-generated. DO NOT EDIT!
 #
-require 'protobuf/message'
+require 'protobuf'
 
 
 ##
@@ -12,6 +14,7 @@ require 'google/protobuf/descriptor.pb'
 module Google
   module Protobuf
     module Compiler
+      ::Protobuf::Optionable.inject(self) { ::Google::Protobuf::FileOptions }
 
       ##
       # Message Classes
@@ -22,6 +25,13 @@ module Google
 
       end
 
+
+
+      ##
+      # File Options
+      #
+      set_option :java_package, "com.google.protobuf.compiler"
+      set_option :java_outer_classname, "PluginProtos"
 
 
       ##

@@ -1,5 +1,60 @@
 # Stable (3.x)
 
+4.0.0
+-----------
+- Merge in ruby-protobuf/protobuf
+
+Upstream 3.7.0 (pre2)
+-----------
+- BUG: Track if a repeated field has been deliberately set (#325)
+
+Upstream 3.7.0 (pre1)
+-----------
+- BUG: Revert to old behavior for setting repeated fields to nil
+- BUG: Set binmode for protoc-gen-ruby STDIN and STDOUT to compile proto files on Windows
+- Make all things Optionable and fix requires
+
+Upstream 3.7.0 (pre0)
+-----------
+- Add `PB_USE_RAW_RPC_NAMES` option to preserve raw RPC name (since #underscore can be lossy).
+- Add `PB_ENUM_UPCASE` option to generate enum values as upcased.
+- Clean up dynamic code generation in prep for extension namespacing.
+- Namespace extension fields.
+- Field values should be stored via their fully qualified names
+- Refresh google/protobuf/descriptor.{proto,pb.rb}
+- Properly encode and decode negative enum values.
+
+Upstream 3.6.9
+--------
+- Make protobuf serivce directory pluggable.
+
+Upstream 3.6.7
+-----
+- An issue was reported with the encode memoization added in #293 with using any array modification
+method on repeated fields. Remove memoization on encode (#305) until we can find a better solution.
+
+Upstream 3.5.5
+--------
+- Add native Varint for MRI.
+
+Upstream 3.5.4
+--------
+- Ensures ActiveSupport::Deprecation does not get a stack trace when deprecations are disabled.
+
+Upstream 3.5.3
+--------
+- Optimized get_extension_field and get_field calls.
+
+Upstream 3.5.2
+--------
+- Optimized valid_tag?, enums_for_tag and enums_for_tags
+
+Upstream 3.5.1
+--------
+- Adds compatibility for Rails 4.2+ as CLI options were broken
+- Fixes bug with MRI and "dead" thread in zmq broker
+- Fixes Rubocop compatability with new version
+
 3.2.0
 --------
 

@@ -4,6 +4,8 @@ module Protobuf
   module Rpc
     module Middleware
       class Statsd
+        include ::Protobuf::Logging
+
         def initialize(app)
           @app = app
         end
@@ -23,8 +25,6 @@ module Protobuf
         def statsd_base_path(env)
           if env.service_name && env.method_name
             "rpc-server.#{env.service_name}.#{env.method_name}".gsub('::', '.').downcase
-          else
-            nil
           end
         end
 
@@ -46,7 +46,7 @@ module Protobuf
           statsd_client.timing("#{path}.time", end_time - start_time)
         rescue => e
           # We insert ourself after Exception handler, so no exceptions allowed!
-          Protobuf::Logger.warn { "Error with Statsd middleware: #{e.message}" }
+          logger.warn { "Error with Statsd middleware: #{e.message}" }
         end
         private :record_stats
       end

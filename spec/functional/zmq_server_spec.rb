@@ -1,18 +1,20 @@
 require 'spec_helper'
 
-require 'spec/support/test/resource_service'
 require 'protobuf/rpc/service_directory'
+require SUPPORT_PATH.join('resource_service')
 
-describe 'Functional ZMQ Client' do
+RSpec.describe 'Functional ZMQ Client' do
   before(:all) do
     load "protobuf/zmq.rb"
-    @runner = ::Protobuf::Rpc::ZmqRunner.new({ :host => "127.0.0.1",
-                                               :port => 9399,
-                                               :worker_port => 9408,
-                                               :backlog => 100,
-                                               :threshold => 100,
-                                               :threads => 5 })
-    @server_thread = Thread.new(@runner) { |runner| runner.run }
+    @runner = ::Protobuf::Rpc::ZmqRunner.new(
+      'host' => '127.0.0.1',
+      'port' => 9399,
+      'worker_port' => 9408,
+      'backlog' => 100,
+      'threshold' => 100,
+      'threads' => 5
+    )
+    @server_thread = Thread.new(@runner, &:run)
     Thread.pass until @runner.running?
   end
 
@@ -22,36 +24,36 @@ describe 'Functional ZMQ Client' do
   end
 
   it 'runs fine when required fields are set' do
-    expect {
+    expect do
       client = ::Test::ResourceService.client
 
       client.find(:name => 'Test Name', :active => true) do |c|
         c.on_success do |succ|
-          succ.name.should eq("Test Name")
-          succ.status.should eq(::Test::StatusType::ENABLED)
+          expect(succ.name).to eq("Test Name")
+          expect(succ.status).to eq(::Test::StatusType::ENABLED)
         end
 
         c.on_failure do |err|
-          raise err.inspect
+          fail err.inspect
         end
       end
-    }.to_not raise_error
+    end.to_not raise_error
   end
 
   it 'runs under heavy load' do
-    10.times do |x|
-      5.times.map do |y|
+    10.times do
+      5.times.map do
         Thread.new do
           client = ::Test::ResourceService.client
 
           client.find(:name => 'Test Name', :active => true) do |c|
             c.on_success do |succ|
-              succ.name.should eq("Test Name")
-              succ.status.should eq(::Test::StatusType::ENABLED)
+              expect(succ.name).to eq("Test Name")
+              expect(succ.status).to eq(::Test::StatusType::ENABLED)
             end
 
             c.on_failure do |err|
-              raise err.inspect
+              fail err.inspect
             end
           end
         end
@@ -66,10 +68,10 @@ describe 'Functional ZMQ Client' do
       client = ::Test::ResourceService.client
 
       client.find(request) do |c|
-        c.on_success { raise "shouldn't pass" }
-        c.on_failure {|e| error = e }
+        c.on_success { fail "shouldn't pass" }
+        c.on_failure { |e| error = e }
       end
-      error.message.should match(/name.*required/)
+      expect(error.message).to match(/Required field.*does not have a value/)
     end
   end
 
@@ -80,10 +82,10 @@ describe 'Functional ZMQ Client' do
       client = ::Test::ResourceService.client
 
       client.find(request) do |c|
-        c.on_success { raise "shouldn't pass" }
-        c.on_failure {|e| error = e}
+        c.on_success { fail "shouldn't pass" }
+        c.on_failure { |e| error = e }
       end
-      error.message.should match(/expected request.*ResourceFindRequest.*Resource instead/i)
+      expect(error.message).to match(/expected request.*ResourceFindRequest.*Resource instead/i)
     end
   end
 
@@ -93,10 +95,10 @@ describe 'Functional ZMQ Client' do
       client = ::Test::ResourceService.client(:timeout => 1)
 
       client.find_with_sleep(:sleep => 2) do |c|
-        c.on_success { raise "shouldn't pass" }
+        c.on_success { fail "shouldn't pass" }
         c.on_failure { |e| error = e }
       end
-      error.message.should match(/The server repeatedly failed to respond/)
+      expect(error.message).to match(/The server repeatedly failed to respond/)
     end
   end
 

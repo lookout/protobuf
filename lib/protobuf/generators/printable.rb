@@ -11,8 +11,12 @@ module Protobuf
       #
       def init_printer(indent_level)
         @io = ::StringIO.new
-        @_indent_level = indent_level.to_i || 0
+        self.current_indent = indent_level.to_i
       end
+
+      protected
+
+      attr_accessor :current_indent
 
       private
 
@@ -20,10 +24,6 @@ module Protobuf
       #
       def comment(message)
         puts "# #{message}"
-      end
-
-      def current_indent
-        @_indent_level
       end
 
       # Print a "header" comment.
@@ -43,7 +43,7 @@ module Protobuf
       # (after the block is finished).
       #
       def indent
-        @_indent_level += 1
+        self.current_indent += 1
         yield
         outdent
       end
@@ -61,14 +61,14 @@ module Protobuf
       #
       def modulize(name)
         name = name.gsub(/\./, '::')
-        name = name.gsub(/(^(?:::)?[a-z]|::[a-z])/) { |match| match.upcase }
+        name = name.gsub(/(^(?:::)?[a-z]|::[a-z])/, &:upcase)
         name
       end
 
       # Decrease the indent level. Cannot be negative.
       #
       def outdent
-        @_indent_level -= 1 unless @_indent_level == 0
+        self.current_indent -= 1 unless current_indent.zero?
       end
 
       # Return the parent class for a given type.
@@ -84,7 +84,7 @@ module Protobuf
         when :service then
           PARENT_CLASS_SERVICE
         else
-          raise "Unknown parent class type #{type}: #{caller[0..5].join("\n")}"
+          fail "Unknown parent class type #{type}: #{caller[0..5].join("\n")}"
         end
       end
 
@@ -93,14 +93,14 @@ module Protobuf
       # If a block is given, call the block from within an indent block.
       # Otherwise, end the block on the same line.
       #
-      def print_block(name, parent_klass, type, &block)
+      def print_block(name, parent_klass, type)
         name = modulize(name)
         block_def = "#{type} #{name}"
         block_def += " < #{parent_class(parent_klass)}" if parent_klass
 
         if block_given?
           puts block_def
-          indent { block.call }
+          indent { yield }
           puts "end"
           puts
         else
@@ -136,7 +136,7 @@ module Protobuf
       #
       def puts(message = nil)
         if message
-          @io.puts(("  " * @_indent_level) + message)
+          @io.puts(("  " * current_indent) + message)
         else
           @io.puts
         end
@@ -158,4 +158,3 @@ module Protobuf
     end
   end
 end
-
