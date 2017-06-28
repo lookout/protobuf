@@ -74,12 +74,13 @@ describe Protobuf::Rpc::Http::Server do
       expect(response.body).to eq ""
     end
 
-    it 'should return RPC_FAILED for missing input' do
+    it 'should not return RPC_FAILED for missing input' do
       response = client.post "/ReverseModule%3A%3AReverseService/reverse", :input => ""
-      expect(response.status).to eq 400
+      expect(response.status).to eq 200
       expect(response.headers['content-type']).to eq "application/x-protobuf"
-      expect(response.headers['x-protobuf-error-reason']).to eq Protobuf::Socketrpc::ErrorReason::BAD_REQUEST_DATA.to_s
-      expect(response.body).to eq ""
+      expect(response.headers['x-protobuf-error']).to be_nil
+      expect(response.headers['x-protobuf-error-reason']).to be_nil
+      expect(response.body).to eq ReverseModule::ReverseResponse.new(:reversed => "".reverse).encode
     end
 
     it 'should return RPC_ERROR for invalid input' do
