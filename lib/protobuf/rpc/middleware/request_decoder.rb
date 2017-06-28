@@ -46,7 +46,6 @@ module Protobuf
         end
 
         def request
-          fail if request_wrapper.request_proto.blank?
           @request ||= rpc_method.request_type.decode(request_wrapper.request_proto)
         rescue => exception
           raise BadRequestData, "Unable to decode request: #{exception.message}"
